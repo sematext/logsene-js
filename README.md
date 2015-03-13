@@ -1,10 +1,7 @@
 
 
 JavaScript client for [Logsene](http://sematext.com/logsene/index.html).
-
-# Preparation
-
-Register for a [free Logsene account](https://apps.sematext.com/users-web/register.do) or Login to Logsene to create an App Token.
+Register for a [free account](https://apps.sematext.com/users-web/register.do) or Login to Logsene to create an App Token.
 
 # Installation
 
@@ -15,6 +12,6 @@ Register for a [free Logsene account](https://apps.sematext.com/users-web/regist
 
     var Logsene = require('logsene-js')
     var logger =  new Logsene ('LOGSENE-APP-TOKEN', 'test')
-    logger.log ('info', 'text message', {tags: ['a','b'], {customField: 'custom-field'})
+    logger.log ('info', 'text message', {tags: ['a','b'], customField: 'custom-field'})
 
 
