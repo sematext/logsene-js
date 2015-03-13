@@ -1,0 +1,42 @@
+{
+  "name": "logsene-js",
+  "version": "1.0.0",
+  "description": "JavaScript client for Logsene by Sematext",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha",
+    "bundle": "browserify -r ./index.js:logsene-js  > logsene.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sematext/logsene.git"
+  },
+  "keywords": [
+    "SPM",
+    "Sematext",
+    "logging",
+    "centralized logging",
+    "APM",
+    "log",
+    "Logsene",
+    "elasticsearch"
+  ],
+  "author": "Stefan Thies",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sematext/logsene-js/issues"
+  },
+  "homepage": "https://github.com/sematext/logsene-js",
+  "dependencies": {
+    "extend": "^2.0.0",
+    "ip": "^0.3.2",
+    "request": "^2.53.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.1.0",
+    "standard": "^2.10.0"
+  }
+}
