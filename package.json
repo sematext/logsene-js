@@ -1,6 +1,6 @@
 {
   "name": "logsene-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "JavaScript client for Logsene by Sematext",
   "main": "index.js",
   "directories": {
@@ -15,14 +15,15 @@
     "url": "https://github.com/sematext/logsene.git"
   },
   "keywords": [
-    "SPM",
+    "Logsene",
     "Sematext",
     "logging",
     "centralized logging",
-    "APM",
+    "log management",
     "log",
     "Logsene",
-    "elasticsearch"
+    "elasticsearch",
+    "ELK"
   ],
   "author": "Stefan Thies",
   "license": "MIT",

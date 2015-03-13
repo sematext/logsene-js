@@ -1,6 +1,6 @@
-# Logsene API for Javascript
 
-Centralized logging using [Logsene](http://sematext.com/logsene/index.html) API.
+
+JavaScript client for [Logsene](http://sematext.com/logsene/index.html).
 
 # Preparation
 
