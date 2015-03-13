@@ -1,6 +1,6 @@
 {
   "name": "logsene-js",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "JavaScript client for Logsene by Sematext",
   "main": "index.js",
   "directories": {
@@ -26,7 +26,7 @@
     "ELK"
   ],
   "author": "Stefan Thies",
-  "license": "MIT",
+  "license": "Apache",
   "bugs": {
     "url": "https://github.com/sematext/logsene-js/issues"
   },

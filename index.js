@@ -15,6 +15,7 @@ var events = require('events')
 var ipAddress = require('ip').address()
 var util = require('util')
 var path = require('path')
+
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -38,6 +39,10 @@ function Logsene (token, type, url) {
     if (self.logCount > 0)
       self.send()
   }, 30000)
+  var self = this
+  process.on ('exit', function () {
+      self.send()
+  })
 }
 util.inherits(Logsene, events.EventEmitter)
 
@@ -54,7 +59,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     msg[x] = fields[x]
   }
   this.bulkReq += JSON.stringify({ 'index': {'_index': this.token, '_type': this.type}}) + '\n'
-  this.bulkReq += JSON.stringify(msg)
+  this.bulkReq += JSON.stringify(msg) + '\n'
   this.logCount++
   if (this.logCount > MAX_LOGS) {
     this.send()

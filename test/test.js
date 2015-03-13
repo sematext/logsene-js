@@ -19,5 +19,4 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-
 })
