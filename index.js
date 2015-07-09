@@ -24,7 +24,7 @@ var path = require('path')
 function Logsene (token, type, url) {
   if (token == null || token == '')
     throw new Error ('Logsene token not specified')
-  this.url = (url || 'https://logsene-receiver.sematext.com/') + token + '/_bulk'
+  this.url = (url || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type
   this.hostname = os.hostname()
