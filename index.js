@@ -91,9 +91,9 @@ Logsene.prototype.send = function (callback) {
   request.post(options,
     function (err, res) {
     if (err) {
-      self.emit('error', {source: 'logsene', url: this.url, err: err, body: body})
+      self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
     } else {
-      self.emit('log', {source: 'logsene', url: this.url, request: body, count: count, response: res.body})
+      self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.body})
     }
     if (callback) {
       callback(err, res)
