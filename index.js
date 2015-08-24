@@ -58,7 +58,8 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   for (var x in fields) {
     msg[x] = fields[x]
   }
-  this.bulkReq += JSON.stringify({ 'index': {'_index': this.token, '_type': this.type}}) + '\n'
+  var type = fields ? fields._type : this.type
+  this.bulkReq += JSON.stringify({ 'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
   this.bulkReq += JSON.stringify(msg) + '\n'
   this.logCount++
   if (this.logCount > MAX_LOGS) {
