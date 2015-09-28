@@ -3,7 +3,7 @@ var token = process.env.LOGSENE_TOKEN
 
 describe('Logsene log ', function () {
   it('should pass', function (done) {
-    this.timeout(10000)
+    this.timeout(20000)
     try {
       var logsene = new Logsene(token, 'test')
       logsene.once('log', function (event) {

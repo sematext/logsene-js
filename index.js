@@ -8,7 +8,7 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 
-var MAX_LOGS = 100
+var MAX_LOGS = 999
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -35,10 +35,11 @@ function Logsene (token, type, url) {
     this.sourceName = path.basename(process.mainModule.filename)
   events.EventEmitter.call(this)
   var self = this
-  setInterval(function () {
+  var tid = setInterval(function () {
     if (self.logCount > 0)
       self.send()
-  }, 30000)
+  }, process.env.LOGSENE_LOG_INTERVAL || 10000)
+  tid.unref()
   var self = this
   process.on ('exit', function () {
       self.send()
