@@ -8,7 +8,7 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 
-var MAX_LOGS = 999
+var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 999
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -24,7 +24,7 @@ var path = require('path')
 function Logsene (token, type, url) {
   if (token == null || token == '')
     throw new Error ('Logsene token not specified')
-  this.url = (url || 'https://logsene-receiver.sematext.com/_bulk')
+  this.url = (url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type
   this.hostname = os.hostname()
