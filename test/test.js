@@ -22,27 +22,24 @@ describe('Logsene log ', function () {
 })
 
 describe('Logsene persistance ', function () {
-  it('retransmit', function (done) {
+  it('re-transmit', function (done) {
     this.timeout(30000)
     try {
       var logsene = new Logsene(token, 'test')
       var url = logsene.url
-      logsene.diskBuffer(true, './')
-      logsene.setUrl ('http://notreachable.sematext.com')
+      logsene.diskBuffer(true, '.')
+      logsene.setUrl ('http://notreachable.test')
       logsene.once('rt', function (event) {
-        console.log(event)
+        console.log(event.file + ' -> ' + event.url)
         done()
       })
-      logsene.on ('error', function (err) { 
-        console.log('error ' + err.err)
-        //setTimeout (function () {
-        logsene.setUrl(url)        
-        //}, 1000)
+      logsene.on ('error', function (err) {
+        // console.log('error ' + err.err)
+        logsene.setUrl(url)
       })
-      for (var i = 0; i <= 1001; i++) {
+      for (var i = 0; i <= 1000; i++) {
         logsene.log('info', 'test retransmit message ' + i, {testField: 'Test custom field ' + i, counter: i})
-      }
-      
+      }    
     } catch (err) {
       done(err)
     }
