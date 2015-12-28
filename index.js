@@ -28,7 +28,7 @@ function Logsene (token, type, url) {
   }
   this.url = (url || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
-  this.type = type
+  this.type = type || 'logs'
   this.hostname = os.hostname()
   this.bulkReq = ''
   this.logCount = 0
@@ -193,7 +193,6 @@ Logsene.prototype.shipFile = function (name, cb) {
 
 Logsene.prototype.retransmit = function () {
   var self = this
-  console.error('!!! retransmit')
   walk(self.tmpDir, function (path, stats) {
     if (/bulk/i.test(path)) {
       self.shipFile(path)

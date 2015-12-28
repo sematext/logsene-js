@@ -32,9 +32,9 @@
   },
   "homepage": "https://github.com/sematext/logsene-js",
   "dependencies": {
-    "extend": "^2.0.0",
-    "ip": "^0.3.2",
-    "request": "^2.53.0"
+    "extend": "^2.0.1",
+    "ip": "^0.3.3",
+    "request": "^2.64.0"
   },
   "devDependencies": {
     "mocha": "^2.1.0",
