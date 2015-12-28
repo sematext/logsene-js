@@ -26,7 +26,7 @@ function Logsene (token, type, url) {
   if (token === null || token === '') {
     throw new Error('Logsene token not specified')
   }
-  this.url = (url || 'https://logsene-receiver.sematext.com/_bulk')
+  this.url = (url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
   this.hostname = os.hostname()
