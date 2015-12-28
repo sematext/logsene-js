@@ -27,8 +27,8 @@ describe('Logsene persistance ', function () {
     try {
       var logsene = new Logsene(token, 'test')
       var url = logsene.url
-      logsene.diskBuffer(true, '.')
-      logsene.setUrl ('http://notreachable.semateext.com')
+      logsene.diskBuffer(true, './')
+      logsene.setUrl ('http://notreachable.sematext.com')
       logsene.once('rt', function (event) {
         console.log(event)
         done()

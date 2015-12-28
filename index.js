@@ -9,6 +9,7 @@
  */
 
 var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 999
+var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -33,6 +34,7 @@ function Logsene (token, type, url) {
   this.bulkReq = ''
   this.logCount = 0
   this.sourceName = null
+  this.storedRequestCount = 0
   if (process.mainModule && process.mainModule.filename) {
     this.sourceName = path.basename(process.mainModule.filename)
   }
@@ -47,6 +49,9 @@ function Logsene (token, type, url) {
   process.on('exit', function () {
     self.send()
   })
+  if (process.env.LOGSENE_TMP_DIR) {
+    this.diskBuffer(true, process.env.LOGSENE_TMP_DIR)
+  }
 }
 util.inherits(Logsene, events.EventEmitter)
 
@@ -141,8 +146,12 @@ Logsene.prototype.getFileName = function () {
 }
 
 Logsene.prototype.store = function (data, cb) {
+  this.storedRequestCount++
+  if (this.storedRequestCount > MAX_STORED_REQUESTS) {
+    cb(new Error('limit of max. stored requests reached, failed req. will not be stored'))
+    return
+  }
   var fn = this.getFileName()
-  console.log('storing file ' + fn)
   fs.writeFile(fn, JSON.stringify(data), function (err) {
     if (err && cb) {
       cb(err)
@@ -184,6 +193,7 @@ Logsene.prototype.shipFile = function (name, cb) {
         if (cb) {
           cb(err, res)
         }
+        self.storedRequestCount--
       })
     } catch (ex) {
       self.emit('error', {source: 'logsene', err: ex, body: data})
