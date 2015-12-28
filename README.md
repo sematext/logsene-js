@@ -11,13 +11,13 @@ Register for a [free account](https://apps.sematext.com/users-web/register.do) o
 
 
     var Logsene = require('logsene-js')
-    var logger =  new Logsene ('LOGSENE-APP-TOKEN', 'test')
+    var logger =  new Logsene ('LOGSENE-APP-TOKEN')
     logger.log ('info', 'text message', {tags: ['a','b'], customField: 'custom-field'})
 
 ### Constructor Parameters
 
 - __token__ - Create your free account and access token [here](https://apps.sematext.com/users-web/register.do).
-- __type__ - Type of your logs - please note you can define [Elasticsearch mapping templates in Logsene](http://blog.sematext.com/2015/02/09/elasticsearch-mapping-types-for-json-logging/) 
+- __type__ - optional default type of your logs - please note you can define [Elasticsearch mapping templates in Logsene](http://blog.sematext.com/2015/02/09/elasticsearch-mapping-types-for-json-logging/) 
 - __url__ - Logsene receiver URL (e.g. for Logsene On Premises), defaults to ```'https://logsene-receiver.sematext.com/_bulk'```
 
 ## Security
