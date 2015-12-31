@@ -27,7 +27,7 @@ function Logsene (token, type, url) {
   if (token === null || token === '') {
     throw new Error('Logsene token not specified')
   }
-  this.url = (url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
+  this.setUrl(url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
   this.hostname = os.hostname()
@@ -57,6 +57,13 @@ util.inherits(Logsene, events.EventEmitter)
 
 Logsene.prototype.setUrl = function (url) {
   this.url = url
+  var Agent = null
+  if (/^https/.test(url)) {
+    Agent = require('https').Agent
+  } else {
+    Agent = require('http').Agent
+  }
+  this.httpAgent = new Agent({maxSockets: 10})
 }
 
 Logsene.prototype.diskBuffer = function (enabled, dir) {
@@ -113,6 +120,7 @@ Logsene.prototype.send = function (callback) {
     // 'Keep-Alive': false
     },
     body: body,
+    agent: self.httpAgent,
     method: 'POST'
   }
   request.post(options,
@@ -120,6 +128,7 @@ Logsene.prototype.send = function (callback) {
       if (err) {
         self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
         if (self.persistence) {
+          options.agent = false
           self.store({options: options})
         }
       } else {
@@ -165,28 +174,25 @@ function walk (currentDirPath, callback) {
 
 Logsene.prototype.shipFile = function (name, cb) {
   var self = this
-  
-  try {
-    var data = fs.readFileSync(name)
-    var options = JSON.parse(data)
-    options.url = self.url
-    request.post(options, function (err, res) {
-      if (cb) {
-        cb(err, res)
+  fs.readFile(name, function (ioerr, data) {
+      if (cb && ioerr) {
+        cb(ioerr)
       }
-      if (err) {
-        self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
-      } else {
-      self.emit ('file shipped', {file: name})
-        self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
-      }
-      self.storedRequestCount--
+      var options = JSON.parse(data)
+      options.url = self.url
+      request.post(options, function (err, res) {
+        if (cb) {
+          cb(err, res)
+        }
+        if (err) {
+          self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
+        } else {
+          self.emit('file shipped', {file: name})
+          self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
+        }
+        self.storedRequestCount--
+      })
     })
-  } catch (ex) {
-    if (cb) {
-      cb(ex)
-    }
-  }
 }
 
 Logsene.prototype.retransmit = function () {
