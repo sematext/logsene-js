@@ -20,6 +20,12 @@ Register for a [free account](https://apps.sematext.com/users-web/register.do) o
 - __type__ - optional default type of your logs - please note you can define [Elasticsearch mapping templates in Logsene](http://blog.sematext.com/2015/02/09/elasticsearch-mapping-types-for-json-logging/) 
 - __url__ - Logsene receiver URL (e.g. for Logsene On Premises), defaults to ```'https://logsene-receiver.sematext.com/_bulk'```
 
+## Environment variables
+- LOGSENE_TMP_DIR - diectory to store failed bulk requests, for later re-transmission. By default failed requests are not stored. 
+- LOGSENE_LOG_INTERVAL - Time to collect logs before a bulk request is done. Default 10000 ms
+- LOGSENE_BULK_SIZE - Maximum size of a bulk request. Default 1000. 
+- LOGSENE_URL - URL for the Logsene receiver. E.g. for On-Premise version. Defaults to Sematext Logsene SaaS receiver https://logsene-receiver.sematext.com/_bulk
+
 ## Security
 
 - HTTPS is enabled by default 
