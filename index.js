@@ -199,10 +199,9 @@ Logsene.prototype.retransmit = function () {
   var self = this
   walk(self.tmpDir, function (path, stats) {
     if (/bulk/i.test(path)) {
-      self.shipFile(path, function () {
-        // file can be delted in any case
-        // because a new file would be stored
-        // when transmisson failed
+      self.shipFile(path, function (err, res) {
+        // remove file in any case, if req fails again
+        // a new file will be created
         fs.unlinkSync(path)
       })
     }
