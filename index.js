@@ -8,7 +8,7 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 
-var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 999
+var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
 var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
 var request = require('request')
 var os = require('os')
@@ -94,7 +94,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
   this.bulkReq += JSON.stringify(msg) + '\n'
   this.logCount++
-  if (this.logCount > MAX_LOGS) {
+  if (this.logCount >= MAX_LOGS) {
     this.send()
   }
   if (callback) {
