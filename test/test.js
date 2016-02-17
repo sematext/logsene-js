@@ -38,7 +38,7 @@ describe('Logsene persistance ', function () {
         logsene.setUrl(url)
       })
       for (var i = 0; i <= 1000; i++) {
-        logsene.log('info', 'test retransmit message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
       }    
     } catch (err) {
       done(err)

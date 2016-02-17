@@ -23,7 +23,7 @@ var fs = require('fs')
  * type - type of log (string)
  * url - optional alternative URL for Logsene receiver (e.g. for on premises version)
  */
-function Logsene (token, type, url) {
+function Logsene (token, type, url, storageDirectory) {
   if (token === null || token === '') {
     throw new Error('Logsene token not specified')
   }
@@ -49,8 +49,8 @@ function Logsene (token, type, url) {
   process.on('exit', function () {
     self.send()
   })
-  if (process.env.LOGSENE_TMP_DIR) {
-    this.diskBuffer(true, process.env.LOGSENE_TMP_DIR)
+  if (process.env.LOGSENE_TMP_DIR || storageDirectory) {
+    this.diskBuffer(true, process.env.LOGSENE_TMP_DIR || storageDirectory)
   }
 }
 util.inherits(Logsene, events.EventEmitter)
@@ -86,13 +86,21 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
  * @param callback (err, msg object)
  */
 Logsene.prototype.log = function (level, message, fields, callback) {
-  var msg = {'@timestamp': new Date().toISOString(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
-  for (var x in fields) {
-    msg[x] = fields[x]
-  }
   var type = fields ? fields._type : this.type
+  if (fields && fields._type) {
+    delete fields._type
+  } 
+  var msg = {'@timestamp': new Date(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
+  for (var x in fields) {
+    // rename fields for ELasticsearch 2.x
+    msg[x.replace(/\./g,'_').replace(/^_/,'')] = fields[x]
+  }
+  if (typeof msg['@timestamp'] === 'number') {
+    msg['@timestamp'] = new Date(msg['@timestamp'])   
+  }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
   this.bulkReq += JSON.stringify(msg) + '\n'
+  console.log(msg)
   this.logCount++
   if (this.logCount >= MAX_LOGS) {
     this.send()
