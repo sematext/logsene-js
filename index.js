@@ -100,7 +100,6 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
   this.bulkReq += JSON.stringify(msg) + '\n'
-  console.log(msg)
   this.logCount++
   if (this.logCount >= MAX_LOGS) {
     this.send()
