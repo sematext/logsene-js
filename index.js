@@ -93,7 +93,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   var msg = {'@timestamp': new Date(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
   for (var x in fields) {
     // rename fields for ELasticsearch 2.x
-    msg[x.replace(/\./g,'_').replace(/^_/,'')] = fields[x]
+    msg[x.replace(/\./g,'_').replace(/^_+/,'')] = fields[x]
   }
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])   
