@@ -45,7 +45,8 @@ function Logsene (token, type, url, storageDirectory) {
       self.send()
     }
   }, process.env.LOGSENE_LOG_INTERVAL || 10000)
-  tid.unref()
+  if(tid.unref)
+    tid.unref()
   process.on('exit', function () {
     self.send()
   })
