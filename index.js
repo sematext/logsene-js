@@ -45,7 +45,7 @@ function Logsene (token, type, url, storageDirectory) {
       self.send()
     }
   }, process.env.LOGSENE_LOG_INTERVAL || 10000)
-  if(tid.unref)
+  if (tid.unref)
     tid.unref()
   process.on('exit', function () {
     self.send()
@@ -70,14 +70,19 @@ Logsene.prototype.setUrl = function (url) {
 Logsene.prototype.diskBuffer = function (enabled, dir) {
   this.tmpDir = (dir || require('os').tmpdir())
   this.persistence = enabled
-  var self = this
-  if (enabled === true) {
-    this.tid = setInterval(function () {
-      self.retransmit()
-    }, 20000)
-  } else {
-    clearInterval(this.tid)
-  }
+  fs.stat(this.tmpDir, function (err, stats) {
+    if (err) {
+      this.persistence = false
+    } else {
+      if (enabled === true) {
+        this.tid = setInterval(function () {
+          this.retransmit()
+        }.bind(this), 20000)
+      } else {
+        clearInterval(this.tid)
+      }
+    }
+  }.bind(this))
 }
 /**
  * Add log message to send buffer
@@ -90,14 +95,14 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   var type = fields ? fields._type : this.type
   if (fields && fields._type) {
     delete fields._type
-  } 
+  }
   var msg = {'@timestamp': new Date(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
   for (var x in fields) {
     // rename fields for ELasticsearch 2.x
-    msg[x.replace(/\./g,'_').replace(/^_+/,'')] = fields[x]
+    msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
   }
   if (typeof msg['@timestamp'] === 'number') {
-    msg['@timestamp'] = new Date(msg['@timestamp'])   
+    msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
   this.bulkReq += JSON.stringify(msg) + '\n'
@@ -149,7 +154,7 @@ Logsene.prototype.send = function (callback) {
 }
 
 Logsene.prototype.getFileName = function () {
-  return path.join(this.tmpDir,  new Date().getTime() + '.bulk')
+  return path.join(this.tmpDir, new Date().getTime() + '.bulk')
 }
 
 Logsene.prototype.store = function (data, cb) {
@@ -169,38 +174,47 @@ Logsene.prototype.store = function (data, cb) {
 function walk (currentDirPath, callback) {
   var fs = require('fs')
   var path = require('path')
-  fs.readdirSync(currentDirPath).forEach(function (name) {
-    var filePath = path.join(currentDirPath, name)
-    var stat = fs.statSync(filePath)
-    if (stat.isFile()) {
-      callback(filePath, stat)
-    } else if (stat.isDirectory()) {
-      walk(filePath, callback)
-    }
-  })
+  try {
+    fs.readdirSync(currentDirPath).forEach(function (name) {
+      var filePath = path.join(currentDirPath, name)
+      var stat = fs.stat(filePath, function (err, stat) {
+        if (stat.isFile()) {
+          callback(filePath, stat)
+        } else if (stat.isDirectory()) {
+          walk(filePath, callback)
+        }
+      })
+    })
+  } catch (err) {
+    // ignore, nothing to do
+  }
 }
 
 Logsene.prototype.shipFile = function (name, cb) {
   var self = this
   fs.readFile(name, function (ioerr, data) {
-      if (cb && ioerr) {
-        cb(ioerr)
+    if (ioerr) {
+      if (cb) {
+        return cb(ioerr)
+      } else {
+        return
       }
-      var options = JSON.parse(data)
-      options.url = self.url
-      request.post(options, function (err, res) {
-        if (cb) {
-          cb(err, res)
-        }
-        if (err) {
-          self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
-        } else {
-          self.emit('file shipped', {file: name})
-          self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
-        }
-        self.storedRequestCount--
-      })
+    }
+    var options = JSON.parse(data)
+    options.url = self.url
+    request.post(options, function (err, res) {
+      if (cb) {
+        cb(err, res)
+      }
+      if (err) {
+        self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
+      } else {
+        self.emit('file shipped', {file: name})
+        self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
+      }
+      self.storedRequestCount--
     })
+  })
 }
 
 Logsene.prototype.retransmit = function () {
