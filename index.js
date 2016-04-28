@@ -224,7 +224,11 @@ Logsene.prototype.retransmit = function () {
       self.shipFile(path, function (err, res) {
         // remove file in any case, if req fails again
         // a new file will be created
-        fs.unlinkSync(path)
+        try {
+          fs.unlinkSync(path)
+        } catch (err) {
+          // ignore if file is already deleted
+        }
       })
     }
   })
