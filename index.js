@@ -24,7 +24,7 @@ var fs = require('fs')
  * url - optional alternative URL for Logsene receiver (e.g. for on premises version)
  */
 function Logsene (token, type, url, storageDirectory) {
-  if (token === null || token === '') {
+  if (!token) {
     throw new Error('Logsene token not specified')
   }
   this.setUrl(url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
@@ -84,6 +84,23 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     }
   }.bind(this))
 }
+
+// A JSON stringifier that handles cycles safely.
+// Usage: JSON.stringify(obj, safeCycles())
+function safeCycles() {
+  var seen = [];
+  return function (key, val) {
+    if (!val || typeof (val) !== 'object') {
+      return val;
+    }
+    if (seen.indexOf(val) !== -1) {
+      return '[Circular]';
+    }
+    seen.push(val);
+    return val;
+  };
+}
+
 /**
  * Add log message to send buffer
  * @param level - log level e.g. 'info', 'warning', 'error'
@@ -98,14 +115,14 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   }
   var msg = {'@timestamp': new Date(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
   for (var x in fields) {
-    // rename fields for ELasticsearch 2.x
+    // rename fields for Elasticsearch 2.x
     msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
   }
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
-  this.bulkReq += JSON.stringify(msg) + '\n'
+  this.bulkReq += JSON.stringify(msg, safeCycles) + '\n'
   this.logCount++
   if (this.logCount >= MAX_LOGS) {
     this.send()
