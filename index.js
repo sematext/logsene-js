@@ -178,6 +178,9 @@ function walk (currentDirPath, callback) {
     fs.readdirSync(currentDirPath).forEach(function (name) {
       var filePath = path.join(currentDirPath, name)
       var stat = fs.stat(filePath, function (err, stat) {
+        if (err) {
+          return
+        }
         if (stat.isFile()) {
           callback(filePath, stat)
         } else if (stat.isDirectory()) {
