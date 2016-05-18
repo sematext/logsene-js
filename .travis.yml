@@ -1,5 +1,7 @@
 os:
   - linux
+env:
+- LOGSENE_TOKEN=test-token
 sudo: false
 language: node_js
 addons:
