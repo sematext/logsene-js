@@ -44,6 +44,6 @@ Register for a [free account](https://apps.sematext.com/users-web/register.do) o
 # Other related modules
 
 - Please check [winston-logsene](https://github.com/sematext/winston-logsene) a transport layer for the winston logging framework.
-- Please see [bunyan-logsene](github.com/6RiverSystems/bunyan-logsene) a transport layer for the bunyan logging framework.
+- Please see [bunyan-logsene](https://github.com/6RiverSystems/bunyan-logsene) a transport layer for the bunyan logging framework.
 
 
