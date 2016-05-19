@@ -122,7 +122,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
-  this.bulkReq += JSON.stringify(msg, safeCycles) + '\n'
+  this.bulkReq += JSON.stringify(msg, safeCycles()) + '\n'
   this.logCount++
   if (this.logCount >= MAX_LOGS) {
     this.send()
