@@ -35,7 +35,11 @@ describe('Logsene log ', function () {
 
     try {
       logsene.log('info', 'circular test', foo);
-      done();
+      if (logsene.bulkReq.indexOf('[Circular') !== -1) {
+        done();
+      } else {
+        done(new Error('The circular reference was not caught'));
+      }
     } catch(err) {
       done(err);
     }
