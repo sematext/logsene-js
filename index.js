@@ -17,7 +17,7 @@ var ipAddress = require('ip').address()
 var util = require('util')
 var path = require('path')
 var fs = require('fs')
-
+var stringifySafe = require('json-stringify-safe')
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -85,22 +85,6 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
   }.bind(this))
 }
 
-// A JSON stringifier that handles cycles safely.
-// Usage: JSON.stringify(obj, safeCycles())
-function safeCycles() {
-  var seen = [];
-  return function (key, val) {
-    if (!val || typeof (val) !== 'object') {
-      return val;
-    }
-    if (seen.indexOf(val) !== -1) {
-      return '[Circular]';
-    }
-    seen.push(val);
-    return val;
-  };
-}
-
 /**
  * Add log message to send buffer
  * @param level - log level e.g. 'info', 'warning', 'error'
@@ -122,7 +106,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
-  this.bulkReq += JSON.stringify(msg, safeCycles()) + '\n'
+  this.bulkReq += stringifySafe(msg) + '\n'
   this.logCount++
   if (this.logCount >= MAX_LOGS) {
     this.send()
