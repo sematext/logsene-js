@@ -1,6 +1,6 @@
 {
   "name": "logsene-js",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "JavaScript client for Logsene by Sematext",
   "main": "index.js",
   "directories": {
@@ -33,8 +33,8 @@
   "homepage": "https://github.com/sematext/logsene-js",
   "dependencies": {
     "extend": "^2.0.1",
-    "ip": "^0.3.3",
     "json-stringify-safe": "^5.0.1",
+    "mkpath": "^1.0.0",
     "request": "^2.64.0"
   },
   "devDependencies": {

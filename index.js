@@ -7,7 +7,7 @@
  * This source code is to be used exclusively by users and customers of Sematext.
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
-
+'user strict'
 var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
 var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
 var request = require('request')
@@ -68,12 +68,15 @@ Logsene.prototype.setUrl = function (url) {
 }
 
 Logsene.prototype.diskBuffer = function (enabled, dir) {
-  this.tmpDir = (dir || require('os').tmpdir())
-  this.persistence = enabled
-  fs.stat(this.tmpDir, function (err, stats) {
+  this.tmpDir = path.join ((dir || require('os').tmpdir()), this.token)
+  var mkpath = require ('mkpath')
+  mkpath(this.tmpDir, function (err) {
     if (err) {
       this.persistence = false
+      console.log('Error: can not activate disk buffer for logsene-js: ' + err )
     } else {
+      this.persistence = enabled
+      this.checkTmpDir = true
       if (enabled === true) {
         this.tid = setInterval(function () {
           this.retransmit()
@@ -97,7 +100,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && fields._type) {
     delete fields._type
   }
-  var msg = {'@timestamp': new Date(), level: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
+  var msg = {'@timestamp': new Date(), severity: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
@@ -131,7 +134,6 @@ Logsene.prototype.send = function (callback) {
     headers: {
       'User-Agent': 'logsene-js',
       'Content-Type': 'application/json'
-    // 'Keep-Alive': false
     },
     body: body,
     agent: self.httpAgent,
@@ -160,6 +162,7 @@ Logsene.prototype.getFileName = function () {
 
 Logsene.prototype.store = function (data, cb) {
   this.storedRequestCount++
+  this.checkTmpDir = true
   if (this.storedRequestCount > MAX_STORED_REQUESTS) {
     cb(new Error('limit of max. stored requests reached, failed req. will not be stored'))
     return
@@ -176,7 +179,7 @@ function walk (currentDirPath, callback) {
   var fs = require('fs')
   var path = require('path')
   try {
-    fs.readdirSync(currentDirPath).forEach(function (name) {
+    fs.readdirSync(currentDirPath).forEach(function (name, index, fileList) {
       var filePath = path.join(currentDirPath, name)
       var stat = fs.stat(filePath, function (err, stat) {
         if (err) {
@@ -189,6 +192,7 @@ function walk (currentDirPath, callback) {
         }
       })
     })
+    this.checkTmpDir=false
   } catch (err) {
     // ignore, nothing to do
   }
@@ -222,20 +226,29 @@ Logsene.prototype.shipFile = function (name, cb) {
 }
 
 Logsene.prototype.retransmit = function () {
-  var self = this
-  walk(self.tmpDir, function (path, stats) {
-    if (/bulk/i.test(path)) {
-      self.shipFile(path, function (err, res) {
-        // remove file in any case, if req fails again
-        // a new file will be created
-        try {
-          fs.unlinkSync(path)
-        } catch (err) {
-          // ignore if file is already deleted
-        }
-      })
+  if (!this.checkTmpDir) {
+    return
+  }
+  walk(this.tmpDir, function (path, stats) {
+    if (/bulk$/i.test(path)) {
+      try {
+        // rename the file, so a seond instance can't ship it in parallel
+        var newFileName = path + '.lock'
+        fs.renameSync(path, newFileName)
+        this.shipFile(newFileName, function (err, res) {
+          // remove file in any case, if req fails again
+          // a new file will be created
+          try {
+            fs.unlinkSync(newFileName)
+          } catch (err) {
+            // ignore if file is already deleted
+          }
+        })
+      } catch (ex) {
+        // ignore, other process might have renemed the file
+      }
     }
-  })
+  }.bind(this))
 }
 
 module.exports = Logsene
