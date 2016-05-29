@@ -2,43 +2,33 @@ var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN
 
 describe('Logsene constructor', function() {
-
   it('should fail without a token', function(done) {
-
-    var emptyTokens = [undefined, null, ''];
-
+    var emptyTokens = [undefined, null, '']
     emptyTokens.forEach(function(token) {
       try {
-        new Logsene(token);
-        done(new Error('Should throw exception'));
+        new Logsene(token)
+        done(new Error('Should throw exception'))
       } catch(err) {
       }
-    });
-
-    done();
-  });
-
-});
+    })
+    done()
+  })
+})
 
 describe('Logsene log ', function () {
-
   it('should not throw circular reference error', function(done) {
-
-    var logsene = new Logsene(token, 'test');
-
+    var logsene = new Logsene(token, 'test')
     function Foo() {
-      this.abc = 'Hello';
-      this.circular = this;
+      this.abc = 'Hello'
+      this.circular = this
     }
-
-    var foo = new Foo();
-
+    var foo = new Foo()
     try {
-      logsene.log('info', 'circular test', foo);
+      logsene.log('info', 'circular test', foo)
       if (logsene.bulkReq.indexOf('[Circular') !== -1) {
         done();
       } else {
-        done(new Error('The circular reference was not caught'));
+        done(new Error('The circular reference was not caught'))
       }
     } catch(err) {
       done(err);
@@ -66,19 +56,20 @@ describe('Logsene log ', function () {
 
 describe('Logsene persistance ', function () {
   it('re-transmit', function (done) {
-    this.timeout(30000)
+    this.timeout(50000)
     try {
+
       var logsene = new Logsene(token, 'test')
-      var url = logsene.url
+      var url = logsene.url 
       logsene.diskBuffer(true, '.')
-      logsene.setUrl ('http://notreachable.test')
+      logsene.setUrl('http://notreachable.test')
       logsene.once('rt', function (event) {
-        console.log(event.file + ' -> ' + event.url)
         done()
       })
       logsene.on ('error', function (err) {
-        // console.log('error ' + err.err)
-        logsene.setUrl(url)
+        if (err) {
+          logsene.setUrl(url) 
+        }
       })
       for (var i = 0; i <= 1000; i++) {
         logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
