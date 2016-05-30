@@ -16,7 +16,6 @@ var events = require('events')
 var ipAddress = require('ip').address()
 var util = require('util')
 var path = require('path')
-var fs = require('fs')
 var stringifySafe = require('json-stringify-safe')
 /**
  * token - the LOGSENE Token
@@ -44,8 +43,9 @@ function Logsene (token, type, url, storageDirectory) {
       self.send()
     }
   }, process.env.LOGSENE_LOG_INTERVAL || 10000)
-  if (tid.unref)
+  if (tid.unref) {
     tid.unref()
+  }
   process.on('exit', function () {
     self.send()
   })
@@ -68,15 +68,16 @@ Logsene.prototype.setUrl = function (url) {
 var DiskBuffer = require('./DiskBuffer.js')
 Logsene.prototype.diskBuffer = function (enabled, dir) {
   if (enabled) {
-    var tmpDir = path.join ((dir || require('os').tmpdir()), this.token)
+    var tmpDir = path.join((dir || require('os').tmpdir()), this.token)
     this.db = DiskBuffer.createDiskBuffer({
-      tmpDir: tmpDir
+      tmpDir: tmpDir,
+      maxStoredRequests: MAX_STORED_REQUESTS
     })
     this.db.syncFileListFromDir()
     this.db.on('retransmit-req', function (event) {
       this.shipFile(event.fileName, event.buffer, function (err, res) {
         this.db.rmFile(event.fileName)
-        this.db.retransmitNext() 
+        this.db.retransmitNext()
       }.bind(this))
     }.bind(this))
   }
@@ -156,22 +157,20 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   var options = JSON.parse(data)
   options.url = self.url
   request.post(options, function (err, res) {
-      if (cb) {
-        cb(err, res)
+    if (cb) {
+      cb(err, res)
+    }
+    if (err) {
+      self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
+      if (self.persistence) {
+        options.agent = false
+        self.db.store({options: options})
       }
-      if (err) {
-        self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
-        if (self.persistence) {
-          options.agent = false
-          self.db.store({options: options})
-        }
-      } else {
-        self.emit('file shipped', {file: name})
-        self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
-      }
-    })
+    } else {
+      self.emit('file shipped', {file: name})
+      self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
+    }
+  })
 }
-
-
 
 module.exports = Logsene
