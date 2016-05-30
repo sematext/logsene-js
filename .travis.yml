@@ -15,4 +15,5 @@ node_js:
   - "6"
 install:
   - mkdir tmp
+  - mkdir test-token
   - npm i 
