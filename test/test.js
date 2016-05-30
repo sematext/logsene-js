@@ -80,7 +80,7 @@ describe('Logsene persistance ', function () {
   it('re-transmit', function (done) {
     this.timeout(50000)
     try {
-
+      process.env.LOGSENE_DISK_BUFFER_INTERVAL=500
       var logsene = new Logsene(token, 'test')
       var url = logsene.url 
       logsene.diskBuffer(true, '.')
