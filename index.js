@@ -71,7 +71,8 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     var tmpDir = path.join((dir || require('os').tmpdir()), this.token)
     this.db = DiskBuffer.createDiskBuffer({
       tmpDir: tmpDir,
-      maxStoredRequests: MAX_STORED_REQUESTS
+      maxStoredRequests: MAX_STORED_REQUESTS,
+      interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 120000
     })
     this.db.syncFileListFromDir()
     this.db.on('retransmit-req', function (event) {
