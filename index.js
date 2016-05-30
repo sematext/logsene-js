@@ -34,7 +34,6 @@ function Logsene (token, type, url, storageDirectory) {
   this.bulkReq = ''
   this.logCount = 0
   this.sourceName = null
-  this.storedRequestCount = 0
   if (process.mainModule && process.mainModule.filename) {
     this.sourceName = path.basename(process.mainModule.filename)
   }
@@ -66,26 +65,22 @@ Logsene.prototype.setUrl = function (url) {
   }
   this.httpAgent = new Agent({maxSockets: 10})
 }
-
+var DiskBuffer = require('./DiskBuffer.js')
 Logsene.prototype.diskBuffer = function (enabled, dir) {
-  this.tmpDir = path.join ((dir || require('os').tmpdir()), this.token)
-  var mkpath = require ('mkpath')
-  mkpath(this.tmpDir, function (err) {
-    if (err) {
-      this.persistence = false
-      console.log('Error: can not activate disk buffer for logsene-js: ' + err )
-    } else {
-      this.persistence = enabled
-      this.checkTmpDir = true
-      if (enabled === true) {
-        this.tid = setInterval(function () {
-          this.retransmit()
-        }.bind(this), 20000)
-      } else {
-        clearInterval(this.tid)
-      }
-    }
-  }.bind(this))
+  if (enabled) {
+    var tmpDir = path.join ((dir || require('os').tmpdir()), this.token)
+    this.db = DiskBuffer.createDiskBuffer({
+      tmpDir: tmpDir
+    })
+    this.db.syncFileListFromDir()
+    this.db.on('retransmit-req', function (event) {
+      this.shipFile(event.fileName, event.buffer, function (err, res) {
+        this.db.rmFile(event.fileName)
+        this.db.retransmitNext() 
+      }.bind(this))
+    }.bind(this))
+  }
+  this.persistence = enabled
 }
 
 /**
@@ -145,7 +140,7 @@ Logsene.prototype.send = function (callback) {
         self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
         if (self.persistence) {
           options.agent = false
-          self.store({options: options})
+          self.db.store({options: options})
         }
       } else {
         self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.body})
@@ -156,99 +151,27 @@ Logsene.prototype.send = function (callback) {
     })
 }
 
-Logsene.prototype.getFileName = function () {
-  return path.join(this.tmpDir, new Date().getTime() + '.bulk')
-}
-
-Logsene.prototype.store = function (data, cb) {
-  this.storedRequestCount++
-  this.checkTmpDir = true
-  if (this.storedRequestCount > MAX_STORED_REQUESTS) {
-    cb(new Error('limit of max. stored requests reached, failed req. will not be stored'))
-    return
-  }
-  var fn = this.getFileName()
-  fs.writeFile(fn, JSON.stringify(data), function (err) {
-    if (err && cb) {
-      cb(err)
-    }
-  })
-}
-
-function walk (currentDirPath, callback) {
-  var fs = require('fs')
-  var path = require('path')
-  try {
-    fs.readdirSync(currentDirPath).forEach(function (name, index, fileList) {
-      var filePath = path.join(currentDirPath, name)
-      var stat = fs.stat(filePath, function (err, stat) {
-        if (err) {
-          return
-        }
-        if (stat.isFile()) {
-          callback(filePath, stat)
-        } else if (stat.isDirectory()) {
-          walk(filePath, callback)
-        }
-      })
-    })
-    this.checkTmpDir=false
-  } catch (err) {
-    // ignore, nothing to do
-  }
-}
-
-Logsene.prototype.shipFile = function (name, cb) {
+Logsene.prototype.shipFile = function (name, data, cb) {
   var self = this
-  fs.readFile(name, function (ioerr, data) {
-    if (ioerr) {
-      if (cb) {
-        return cb(ioerr)
-      } else {
-        return
-      }
-    }
-    var options = JSON.parse(data)
-    options.url = self.url
-    request.post(options, function (err, res) {
+  var options = JSON.parse(data)
+  options.url = self.url
+  request.post(options, function (err, res) {
       if (cb) {
         cb(err, res)
       }
       if (err) {
         self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
+        if (self.persistence) {
+          options.agent = false
+          self.db.store({options: options})
+        }
       } else {
         self.emit('file shipped', {file: name})
         self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
       }
-      self.storedRequestCount--
     })
-  })
 }
 
-Logsene.prototype.retransmit = function () {
-  if (!this.checkTmpDir) {
-    return
-  }
-  walk(this.tmpDir, function (path, stats) {
-    if (/bulk$/i.test(path)) {
-      try {
-        // rename the file, so a seond instance can't ship it in parallel
-        var newFileName = path + '.lock'
-        fs.renameSync(path, newFileName)
-        this.shipFile(newFileName, function (err, res) {
-          // remove file in any case, if req fails again
-          // a new file will be created
-          try {
-            fs.unlinkSync(newFileName)
-          } catch (err) {
-            // ignore if file is already deleted
-          }
-        })
-      } catch (ex) {
-        // ignore, other process might have renemed the file
-      }
-    }
-  }.bind(this))
-}
+
 
 module.exports = Logsene

@@ -54,6 +54,28 @@ describe('Logsene log ', function () {
   })
 })
 
+describe('Logsene DiskBuffer ', function () {
+  it('re-transmit', function (done) {
+    this.timeout(50000)
+    process.env.DEBUG_LOGSENE_DISK_BUFFER=true
+    var DiskBuffer = require('../DiskBuffer.js')
+    var db = DiskBuffer.createDiskBuffer({
+      tmpDir: './tmp',
+      interval: 1000
+    })
+    db.syncFileListFromDir()
+    db.on('retransmit-req', function (event) {
+        db.rmFile(event.fileName)
+        db.retransmitNext() 
+    })
+    db.once('removed', function () {
+      done()
+    })
+    db.store('hello')
+    db.retransmitNext()
+  })
+})
+
 describe('Logsene persistance ', function () {
   it('re-transmit', function (done) {
     this.timeout(50000)
@@ -63,9 +85,12 @@ describe('Logsene persistance ', function () {
       var url = logsene.url 
       logsene.diskBuffer(true, '.')
       logsene.setUrl('http://notreachable.test')
-      logsene.once('rt', function (event) {
+      logsene.db.once('removed', function (event) {
         done()
       })
+      //logsene.once('rt', function (event) {
+      //  done()
+      //})
       logsene.on ('error', function (err) {
         if (err) {
           logsene.setUrl(url) 
@@ -79,3 +104,4 @@ describe('Logsene persistance ', function () {
     }
   })
 })
+
