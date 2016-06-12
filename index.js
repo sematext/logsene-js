@@ -8,8 +8,8 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
-var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
+var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 500
+var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 2000
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -17,6 +17,9 @@ var ipAddress = require('ip').address()
 var util = require('util')
 var path = require('path')
 var stringifySafe = require('json-stringify-safe')
+var streamBuffers = require('stream-buffers')
+var initialBufferSize = 1024 * 256
+var incrementBuffer = 1024 * 256
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -30,7 +33,11 @@ function Logsene (token, type, url, storageDirectory) {
   this.token = token
   this.type = type || 'logs'
   this.hostname = os.hostname()
-  this.bulkReq = ''
+  this.bulkReq = new streamBuffers.WritableStreamBuffer({
+    initialSize: initialBufferSize,
+    incrementAmount: incrementBuffer
+  })
+  this.offset
   this.logCount = 0
   this.sourceName = null
   if (process.mainModule && process.mainModule.filename) {
@@ -105,10 +112,10 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
-  this.bulkReq += JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n'
-  this.bulkReq += stringifySafe(msg) + '\n'
+  this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
+  this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
-  if (this.logCount >= MAX_LOGS) {
+  if (this.logCount === MAX_LOGS) {
     this.send()
   }
   if (callback) {
@@ -122,12 +129,17 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
-  var body = this.bulkReq
+  var body = this.bulkReq.getContents()
   var count = this.logCount
-  this.bulkReq = ''
+  this.bulkReq = null
+  this.bulkReq = new streamBuffers.WritableStreamBuffer({
+    initialSize: initialBufferSize,
+    incrementAmount: incrementBuffer
+  })
   this.logCount = 0
   var options = {
     url: this.url,
+    logCount: count,
     headers: {
       'User-Agent': 'logsene-js',
       'Content-Type': 'application/json'
@@ -139,13 +151,24 @@ Logsene.prototype.send = function (callback) {
   request.post(options,
     function (err, res) {
       if (err) {
-        self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
+        if (process.env.LOGSENE_DEBUG) {
+          self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
+        } else {
+          self.emit('error', {source: 'logsene', url: options.url, err: err, body: null})
+        }
+
         if (self.persistence) {
           options.agent = false
           self.db.store({options: options})
+          return
         }
       } else {
-        self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.body})
+        if (process.env.LOGSENE_DEBUG) {
+          self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.error})
+
+        } else {
+          self.emit('log', {source: 'logsene', url: String(options.url), request: body.length, count: count, response: res.statusCode})
+        }
       }
       if (callback) {
         callback(err, res)
@@ -165,11 +188,11 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
       if (self.persistence) {
         options.agent = false
-        self.db.store({options: options})
+        self.db.store({options: options}, function () {})
       }
     } else {
-      self.emit('file shipped', {file: name})
-      self.emit('rt', {source: 'logsene', file: name, url: options.url, request: options.body, response: res.body})
+      self.emit('file shipped', {file: name, count: options.count})
+      self.emit('rt', {count: options.count, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
     }
   })
 }

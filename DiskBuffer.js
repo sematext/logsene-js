@@ -21,7 +21,7 @@ function DiskBuffer (options) {
   this.iterator = -1
   this.tid = setInterval(function () {
     this.retransmitNext()
-  }.bind(this), options.interval || 10000)
+  }.bind(this), options.interval || 1000)
   mkpath(this.tmpDir, function (err) {
     if (err) {
       log('Error: can not activate disk buffer for logsene-js: ' + err)
@@ -107,7 +107,7 @@ DiskBuffer.prototype.rmFile = function (fileName) {
     this.emit('removed', {fileName: fileName})
   } catch (err) {
     log('rmFile: could not delete file:' + err.message)
-    // ignore when file was already deleted
+  // ignore when file was already deleted
   }
   if (index > -1) {
     this.storedFiles.splice(index, 1)
@@ -134,6 +134,9 @@ DiskBuffer.prototype.store = function (data, cb) {
     if (cb & err) {
       return cb(err)
     }
+    if (cb) {
+      return cb(null, fn)
+    }
   })
 }
 
@@ -145,4 +148,3 @@ function createDiskBuffer (options) {
 }
 module.exports.createDiskBuffer = createDiskBuffer
 module.exports.DiskBuffer = DiskBuffer
-
