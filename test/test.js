@@ -1,14 +1,14 @@
 var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN
-
+process.env.LOGSENE_URL='http://apps1.test.sematext.com:8088/_bulk'
 describe('Logsene Load Test ', function () {
-  it('memory keeps below 10 MB since start', function (done) {
+  it('memory keeps below 16 MB since start', function (done) {
     this.timeout(120000)
     try {
       var memory = process.memoryUsage().heapUsed
       var counter = 0
       var logCount = 50000
-      var logsene = new Logsene(token, 'test', null, './')
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       var start = new Date().getTime()
       function evtH (event) {
         counter = counter + event.count
@@ -79,7 +79,7 @@ describe('Logsene log ', function () {
   it('transmit', function (done) {
     this.timeout(20000)
     try {
-      var logsene = new Logsene(token, 'test')
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       logsene.once('log', function (event) {
         done()
       })
@@ -122,7 +122,7 @@ describe('Logsene persistance ', function () {
     this.timeout(50000)
     try {
       process.env.LOGSENE_DISK_BUFFER_INTERVAL = 500
-      var logsene = new Logsene(token, 'test', null, './mocha-test')
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test')
       var url = logsene.url
       // logsene.diskBuffer(true, '.')
       logsene.setUrl('http://notreachable.test')
@@ -134,7 +134,7 @@ describe('Logsene persistance ', function () {
       // })
       logsene.on('error', function (err) {
         if (err) {
-          logsene.setUrl(url)
+          logsene.setUrl(process.env.LOGSENE_URL)
         }
       })
       for (var i = 0; i <= 1000; i++) {
