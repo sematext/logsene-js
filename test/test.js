@@ -10,7 +10,12 @@ describe('Logsene Load Test ', function () {
       var logCount = 50000
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       var start = new Date().getTime()
+      var doneCalled = false
       function evtH (event) {
+        if (doneCalled) {
+          return
+        }
+
         counter = counter + event.count
         var memory2 = 0
         if (counter % (logCount / 2) === 0) {
@@ -23,6 +28,7 @@ describe('Logsene Load Test ', function () {
           console.log('\t' + heapDiff + ' MB')
           console.log('\tTransmission duration for ' + counter + ' logs: ' + (new Date().getTime() - start) / 1000 + ' sec.')
           if (heapDiff < 16) {
+            doneCalled = true
             done()
           } else {
             done(new Error('Too much memory used:' + heapDiff + ' MB'))
@@ -35,7 +41,7 @@ describe('Logsene Load Test ', function () {
         done(event)
       })
       logsene.on('error', console.log)
-      for (var i = 0; i <= logCount; i++)
+      for (var i = 0; i < logCount; i++)
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
     } catch (err) {
       done(err)
