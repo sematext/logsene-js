@@ -21,7 +21,7 @@ function DiskBuffer (options) {
   this.iterator = -1
   this.tid = setInterval(function () {
     this.retransmitNext()
-  }.bind(this), options.interval || 1000)
+  }.bind(this), options.interval || 10000)
   mkpath(this.tmpDir, function (err) {
     if (err) {
       log('Error: can not activate disk buffer for logsene-js: ' + err)

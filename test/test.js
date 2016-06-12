@@ -1,6 +1,8 @@
 var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN
-process.env.LOGSENE_URL='http://apps1.test.sematext.com:8088/_bulk'
+if (!process.env.LOGSENE_URL) {
+  process.env.LOGSENE_URL='http://apps1.test.sematext.com:8088/_bulk'
+}
 describe('Logsene Load Test ', function () {
   it('memory keeps below 16 MB since start', function (done) {
     this.timeout(120000)
@@ -11,21 +13,27 @@ describe('Logsene Load Test ', function () {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       var start = new Date().getTime()
       var doneCalled = false
+      console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
+      console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
+        
       function evtH (event) {
         if (doneCalled) {
           return
         }
-
         counter = counter + event.count
         var memory2 = 0
-        if (counter % (logCount / 2) === 0) {
+        if (counter % (logCount / 4) === 0) {
           memory2 = process.memoryUsage().heapUsed
-          console.log('\tHeap diff:' + ((memory2 - memory) / 1024 / 1024) + ' MB')
+          //console.log(process.memoryUsage())
+          console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
+          console.log('\tHeap diff: ' + ((memory2 - memory) / 1024 / 1024) + ' MB')
         }
         if (counter >= logCount) {
           memory2 = process.memoryUsage().heapUsed
           var heapDiff = ((memory2 - memory) / 1024 / 1024)
-          console.log('\t' + heapDiff + ' MB')
+          console.log('\tHeap diff: ' + heapDiff + ' MB')
+          console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
+          console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
           console.log('\tTransmission duration for ' + counter + ' logs: ' + (new Date().getTime() - start) / 1000 + ' sec.')
           if (heapDiff < 16) {
             doneCalled = true

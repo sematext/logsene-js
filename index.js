@@ -8,8 +8,8 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 500
-var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 2000
+var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
+var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -154,25 +154,29 @@ Logsene.prototype.send = function (callback) {
         if (process.env.LOGSENE_DEBUG) {
           self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
         } else {
-          self.emit('error', {source: 'logsene', url: options.url, err: err, body: null})
+          self.emit('error', {source: 'logsene', url: String(options.url), err: err, body: null})
         }
 
         if (self.persistence) {
           options.agent = false
-          self.db.store({options: options})
+          self.db.store({options: options}, function () {
+            delete options
+            delete body
+          })
           return
         }
       } else {
         if (process.env.LOGSENE_DEBUG) {
           self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.error})
-
         } else {
-          self.emit('log', {source: 'logsene', url: String(options.url), request: body.length, count: count, response: res.statusCode})
+          self.emit('log', {source: 'logsene', url: String(options.url), count: count})
         }
       }
       if (callback) {
         callback(err, res)
       }
+      delete options
+      delete body
     })
 }
 
