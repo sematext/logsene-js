@@ -70,7 +70,7 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({maxSockets: 10})
+  this.httpAgent = new Agent({maxSockets: 15})
 }
 var DiskBuffer = require('./DiskBuffer.js')
 Logsene.prototype.diskBuffer = function (enabled, dir) {
@@ -129,13 +129,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
-  var body = this.bulkReq.getContents()
   var count = this.logCount
-  this.bulkReq = null
-  this.bulkReq = new streamBuffers.WritableStreamBuffer({
-    initialSize: initialBufferSize,
-    incrementAmount: incrementBuffer
-  })
   this.logCount = 0
   var options = {
     url: this.url,
@@ -144,39 +138,33 @@ Logsene.prototype.send = function (callback) {
       'User-Agent': 'logsene-js',
       'Content-Type': 'application/json'
     },
-    body: body,
+    body: this.bulkReq.getContents(),
     agent: self.httpAgent,
     method: 'POST'
   }
+  this.bulkReq = null
+  this.bulkReq = new streamBuffers.WritableStreamBuffer({
+    initialSize: initialBufferSize,
+    incrementAmount: incrementBuffer
+  })
   request.post(options,
     function (err, res) {
       if (err) {
-        if (process.env.LOGSENE_DEBUG) {
-          self.emit('error', {source: 'logsene', url: options.url, err: err, body: body})
-        } else {
-          self.emit('error', {source: 'logsene', url: String(options.url), err: err, body: null})
-        }
-
+        self.emit('error', {source: 'logsene', err: err})
         if (self.persistence) {
           options.agent = false
           self.db.store({options: options}, function () {
-            delete options
-            delete body
+            delete options.body
           })
           return
         }
       } else {
-        if (process.env.LOGSENE_DEBUG) {
-          self.emit('log', {source: 'logsene', url: options.url, request: body, count: count, response: res.error})
-        } else {
-          self.emit('log', {source: 'logsene', url: String(options.url), count: count})
-        }
+        self.emit('log', {source: 'logsene', count: count})
       }
       if (callback) {
         callback(err, res)
       }
-      delete options
-      delete body
+      delete options.body
     })
 }
 
@@ -189,7 +177,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err) {
-      self.emit('error', {source: 'logsene', url: options.url, err: err, body: options.body})
+      self.emit('error', {source: 'logsene', err: err})
       if (self.persistence) {
         options.agent = false
         self.db.store({options: options}, function () {})
