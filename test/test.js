@@ -1,15 +1,36 @@
 var Logsene = require('../index.js')
-var token = process.env.LOGSENE_TOKEN
+var token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
+process.env.LOGSENE_URL='http://127.0.0.1:19200/_bulk'
 if (!process.env.LOGSENE_URL) {
   process.env.LOGSENE_URL='http://apps1.test.sematext.com:8088/_bulk'
 }
+
+console.log('Receiver: ' + process.env.LOGSENE_URL)
+console.log('Token: ' + process.env.LOGSENE_TOKEN)
+var http = require('http')
+http.createServer(function (req, res) {
+          res.writeHead(200, {'Content-Type': 'text/plain'})
+          req.on('data', function (data) {
+            // console.log(data.toString().substring(0,10))
+          })
+          req.on('end', function () {
+            res.end('{"code":"200"}\n')
+          })
+          // console.log(req.path)
+  }).listen(19200, '127.0.0.1')
+
+var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB)||30
 describe('Logsene Load Test ', function () {
-  it('memory keeps below 16 MB since start', function (done) {
+  it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
     try {
+      console.log('\t\tLOAD_TEST_MAX_MB: ' + MAX_MB)
+      var logCount = Number(process.env.LOAD_TEST_SIZE) || 50000
+      console.log('\t\tLOAD_TEST_SIZE: ' + logCount)
+
       var memory = process.memoryUsage().heapUsed
       var counter = 0
-      var logCount = 50000
+      
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       var start = new Date().getTime()
       var doneCalled = false
@@ -22,12 +43,12 @@ describe('Logsene Load Test ', function () {
         }
         counter = counter + event.count
         var memory2 = 0
-        if (counter % (logCount / 10) === 0) {
+        //if ((counter % 100) === 0) {
           memory2 = process.memoryUsage().heapUsed
           //console.log(process.memoryUsage())
           console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
           console.log('\tHeap diff: ' + ((memory2 - memory) / 1024 / 1024) + ' MB')
-        }
+        //}
         if (counter >= logCount) {
           memory2 = process.memoryUsage().heapUsed
           var heapDiff = ((memory2 - memory) / 1024 / 1024)
@@ -35,7 +56,7 @@ describe('Logsene Load Test ', function () {
           console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
           console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
           console.log('\tTransmission duration for ' + counter + ' logs: ' + (new Date().getTime() - start) / 1000 + ' sec.')
-          if (heapDiff < 16) {
+          if (heapDiff < MAX_MB) {
             doneCalled = true
             done()
           } else {
@@ -73,6 +94,7 @@ describe('Logsene constructor', function () {
 describe('Logsene log ', function () {
   it('should not throw circular reference error', function (done) {
     var logsene = new Logsene(token, 'test')
+    logsene.on('error', console.log)
     function Foo () {
       this.abc = 'Hello'
       this.circular = this
@@ -143,9 +165,6 @@ describe('Logsene persistance ', function () {
       logsene.db.once('removed', function (event) {
         done()
       })
-      // logsene.once('rt', function (event) {
-      //  done()
-      // })
       logsene.on('error', function (err) {
         if (err) {
           logsene.setUrl(process.env.LOGSENE_URL)

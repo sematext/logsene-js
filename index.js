@@ -8,8 +8,10 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
+var hyperquest = require('hyperquest')
 var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
 var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
+var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -70,9 +72,10 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({maxSockets: 15})
+  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS})
 }
 var DiskBuffer = require('./DiskBuffer.js')
+
 Logsene.prototype.diskBuffer = function (enabled, dir) {
   if (enabled) {
     var tmpDir = path.join((dir || require('os').tmpdir()), this.token)
@@ -116,6 +119,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
   if (this.logCount === MAX_LOGS) {
+    this.bulkReq.end()
     this.send()
   }
   if (callback) {
@@ -136,7 +140,8 @@ Logsene.prototype.send = function (callback) {
     logCount: count,
     headers: {
       'User-Agent': 'logsene-js',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Connection': 'Close'
     },
     body: this.bulkReq.getContents(),
     agent: self.httpAgent,
@@ -147,32 +152,37 @@ Logsene.prototype.send = function (callback) {
     initialSize: initialBufferSize,
     incrementAmount: incrementBuffer
   })
-  request.post(options,
-    function (err, res) {
-      if (err) {
-        self.emit('error', {source: 'logsene', err: err})
-        if (self.persistence) {
-          options.agent = false
-          self.db.store({options: options}, function () {
-            delete options.body
-          })
-          return
-        }
-      } else {
-        self.emit('log', {source: 'logsene', count: count})
+  if (options.body === false) {
+    return
+  }
+  var req = request.post(options, function (err, res) {
+    if (err) {
+      self.emit('error', {source: 'logsene', err: err})
+      if (self.persistence) {
+        options.agent = false
+        self.db.store({options: options}, function () {
+          delete options.body
+        })
+        return
       }
+      req.destroy()
+    } else {
+      self.emit('log', {source: 'logsene', count: count})
       if (callback) {
-        callback(err, res)
+        callback(null, res)
       }
       delete options.body
-    })
+      req.destroy()
+    }
+  })
 }
 
 Logsene.prototype.shipFile = function (name, data, cb) {
   var self = this
   var options = JSON.parse(data)
   options.url = self.url
-  request.post(options, function (err, res) {
+  options.agent = self.httpAgent
+  var req = request.post(options, function (err, res) {
     if (cb) {
       cb(err, res)
     }
@@ -180,12 +190,15 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('error', {source: 'logsene', err: err})
       if (self.persistence) {
         options.agent = false
-        self.db.store({options: options}, function () {})
+        self.db.store({options: options}, function () {
+          delete options.body
+        })
       }
     } else {
       self.emit('file shipped', {file: name, count: options.count})
       self.emit('rt', {count: options.count, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
     }
+    req.destroy()
   })
 }
 
