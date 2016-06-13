@@ -8,7 +8,6 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var hyperquest = require('hyperquest')
 var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
 var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
 var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
