@@ -106,7 +106,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && fields._type) {
     delete fields._type
   }
-  var msg = {'@timestamp': new Date(), severity: level, host: this.hostname, ip: ipAddress, message: message, '@source': this.sourceName}
+  var msg = {'@timestamp': new Date(), severity: level, host: this.hostname, ip: ipAddress, message: message, logSource: this.sourceName}
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
