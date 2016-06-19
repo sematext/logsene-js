@@ -114,6 +114,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
+  this.emit('logged', {msg: msg})
   this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
