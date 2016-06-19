@@ -43,12 +43,6 @@ describe('Logsene Load Test ', function () {
         }
         counter = counter + event.count
         var memory2 = 0
-        if ((counter % 10000) === 0) {
-          memory2 = process.memoryUsage().heapUsed
-          //console.log(process.memoryUsage())
-          console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
-          console.log('\tHeap diff: ' + ((memory2 - memory) / 1024 / 1024) + ' MB')
-        }
         if (counter >= logCount) {
           memory2 = process.memoryUsage().heapUsed
           var heapDiff = ((memory2 - memory) / 1024 / 1024)
@@ -111,7 +105,27 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-
+  it('logs have default fields message, @timestamp, host, ip + custom fields', function (done) {
+    this.timeout(20000)
+    try {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      // check for all required fields!
+      logsene.once('logged', function (event) {
+        if (!event.msg.testField || !event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
+          done(new Error('missing fields in log:' + JSON.tringify(event.msg)))
+        } else {
+          if (event.msg.message == 'test')
+            done()
+        }
+      })
+      logsene.once('error', function (event) {
+        done(event)
+      })
+      logsene.log('info', 'test', {testField: 'Test custom field '})
+    } catch (err) {
+      done(err)
+    }
+  })
   it('transmit', function (done) {
     this.timeout(20000)
     try {
@@ -140,7 +154,7 @@ describe('Logsene log ', function () {
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
     this.timeout(50000)
-    process.env.DEBUG_LOGSENE_DISK_BUFFER = true
+    // process.env.DEBUG_LOGSENE_DISK_BUFFER = true
     var DiskBuffer = require('../DiskBuffer.js')
     var db = DiskBuffer.createDiskBuffer({
       tmpDir: './tmp',
@@ -163,7 +177,7 @@ describe('Logsene persistance ', function () {
   it('re-transmit', function (done) {
     this.timeout(50000)
     try {
-      process.env.LOGSENE_DISK_BUFFER_INTERVAL = 500
+      // process.env.LOGSENE_DISK_BUFFER_INTERVAL = 500
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test')
       var url = logsene.url
       // logsene.diskBuffer(true, '.')
