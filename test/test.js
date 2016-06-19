@@ -43,12 +43,12 @@ describe('Logsene Load Test ', function () {
         }
         counter = counter + event.count
         var memory2 = 0
-        //if ((counter % 100) === 0) {
+        if ((counter % 10000) === 0) {
           memory2 = process.memoryUsage().heapUsed
           //console.log(process.memoryUsage())
           console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
           console.log('\tHeap diff: ' + ((memory2 - memory) / 1024 / 1024) + ' MB')
-        //}
+        }
         if (counter >= logCount) {
           memory2 = process.memoryUsage().heapUsed
           var heapDiff = ((memory2 - memory) / 1024 / 1024)
@@ -116,6 +116,12 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      // check for all required fields!
+      logsene.on('logged', function (event) {
+        if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
+          done(new Error('missing fields in log:' + JSON.tringify(event.msg)))
+        }
+      })
       logsene.once('log', function (event) {
         done()
       })
