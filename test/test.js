@@ -1,3 +1,4 @@
+/* eslint-env mocha */
 var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
 process.env.LOGSENE_URL = 'http://127.0.0.1:19200/_bulk'
@@ -104,7 +105,7 @@ describe('Logsene log ', function () {
       } else {
         done(new Error('The circular reference was not caught'))
       }
-    } catch(err) {
+    } catch (err) {
       done(err)
     }
   })
@@ -117,7 +118,7 @@ describe('Logsene log ', function () {
         if (!event.msg.testField || !event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
           done(new Error('missing fields in log: ' + JSON.stringify(event.msg)))
         } else {
-          if (event.msg.message == 'test') {
+          if (event.msg.message === 'test') {
             done()
           }
         }
@@ -147,8 +148,9 @@ describe('Logsene log ', function () {
         done(event)
       })
       logsene.on('error', console.log)
-      for (var i = 0; i <= 100; i++)
+      for (var i = 0; i <= 100; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+      }
     } catch (err) {
       done(err)
     }
@@ -194,12 +196,12 @@ describe('Logsene persistance ', function () {
       })
       logsene.on('error', function (err) {
         if (err) {
-          logsene.setUrl(process.env.LOGSENE_URL)
+          logsene.setUrl(url)
         }
       })
       setTimeout(function () {
         for (var i = 0; i <= 1001; i++) {
-          logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
+          logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34})
         }
       }, 1000)
     } catch (err) {
