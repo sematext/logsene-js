@@ -1,25 +1,25 @@
 var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
-process.env.LOGSENE_URL='http://127.0.0.1:19200/_bulk'
+process.env.LOGSENE_URL = 'http://127.0.0.1:19200/_bulk'
 if (!process.env.LOGSENE_URL) {
-  process.env.LOGSENE_URL='http://apps1.test.sematext.com:8088/_bulk'
+  process.env.LOGSENE_URL = 'http://apps1.test.sematext.com:8088/_bulk'
 }
 
 console.log('Receiver: ' + process.env.LOGSENE_URL)
 console.log('Token: ' + process.env.LOGSENE_TOKEN)
 var http = require('http')
 http.createServer(function (req, res) {
-          res.writeHead(200, {'Content-Type': 'text/plain'})
-          req.on('data', function (data) {
-            // console.log(data.toString().substring(0,10))
-          })
-          req.on('end', function () {
-            res.end('{"code":"200"}\n')
-          })
-          // console.log(req.path)
-  }).listen(19200, '127.0.0.1')
+  res.writeHead(200, {'Content-Type': 'text/plain'})
+  req.on('data', function (data) {
+    // console.log(data.toString().substring(0,10))
+  })
+  req.on('end', function () {
+    res.end('{"code":"200"}\n')
+  })
+// console.log(req.path)
+}).listen(19200, '127.0.0.1')
 
-var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB)||30
+var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 30
 describe('Logsene Load Test ', function () {
   it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
@@ -30,13 +30,13 @@ describe('Logsene Load Test ', function () {
 
       var memory = process.memoryUsage().heapUsed
       var counter = 0
-      
+
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       var start = new Date().getTime()
       var doneCalled = false
       console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
       console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
-        
+
       function evtH (event) {
         if (doneCalled) {
           return
@@ -64,8 +64,9 @@ describe('Logsene Load Test ', function () {
         done(event)
       })
       logsene.on('error', console.log)
-      for (var i = 0; i < logCount; i++)
+      for (var i = 0; i < logCount; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+      }
     } catch (err) {
       done(err)
     }
@@ -79,7 +80,9 @@ describe('Logsene constructor', function () {
       try {
         new Logsene(token)
         done(new Error('Should throw exception'))
-      } catch(err) {}
+      } catch (err) {
+        // nothing to do here
+      }
     })
     done()
   })
@@ -114,8 +117,9 @@ describe('Logsene log ', function () {
         if (!event.msg.testField || !event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
           done(new Error('missing fields in log: ' + JSON.stringify(event.msg)))
         } else {
-          if (event.msg.message == 'test')
+          if (event.msg.message == 'test') {
             done()
+          }
         }
       })
       logsene.once('error', function (event) {
@@ -133,7 +137,7 @@ describe('Logsene log ', function () {
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
-          done(new Error('missing fields in log:' + JSON.tringify(event.msg)))
+          done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
         }
       })
       logsene.once('log', function (event) {
@@ -162,18 +166,17 @@ describe('Logsene DiskBuffer ', function () {
     })
     db.syncFileListFromDir()
     db.on('retransmit-req', function (event) {
-        db.rmFile(event.fileName)
-        db.retransmitNext()
+      db.rmFile(event.fileName)
+      db.retransmitNext()
     })
     db.once('removed', function () {
       done()
     })
-    setTimeout (function () {
+    setTimeout(function () {
       db.store({message: 'hello'}, function () {
         db.retransmitNext()
       })
     }, 1000)
-    
   })
 })
 
@@ -199,8 +202,6 @@ describe('Logsene persistance ', function () {
           logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
         }
       }, 1000)
-      
-      
     } catch (err) {
       done(err)
     }
