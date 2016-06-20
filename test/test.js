@@ -112,7 +112,7 @@ describe('Logsene log ', function () {
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.testField || !event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
-          done(new Error('missing fields in log:' + JSON.tringify(event.msg)))
+          done(new Error('missing fields in log: ' + JSON.stringify(event.msg)))
         } else {
           if (event.msg.message == 'test')
             done()
