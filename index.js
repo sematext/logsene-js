@@ -21,7 +21,8 @@ var stringifySafe = require('json-stringify-safe')
 var streamBuffers = require('stream-buffers')
 var initialBufferSize = 1024 * 256
 var incrementBuffer = 1024 * 256
-var startsWithUnderscore = new RegExp("^_")
+var startsWithUnderscore = /^_/
+var hasDots = /\./g
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -110,7 +111,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   var msg = {'@timestamp': new Date(), message: message, severity: level, host: this.hostname, ip: ipAddress}
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
-    if (startsWithUnderscore.test(x)) {
+    if (startsWithUnderscore.test(x) || hasDots.test(x)) {
       msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x] 
     } else {
       msg[x] = fields[x]
