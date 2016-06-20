@@ -32,7 +32,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
-  this.setUrl(url || process.env.LOGSENE_URL || 'https://logsene-receiver.sematext.com/_bulk')
+  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL ||'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
   this.hostname = os.hostname()
