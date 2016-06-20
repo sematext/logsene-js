@@ -131,16 +131,16 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-  it('leading _ in field names are removed', function (done) {
+  it('leading _ in field names are removed, dots are replaced with _', function (done) {
     this.timeout(20000)
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.once('logged', function (event) {
-        if (!event.msg.test) {
+        if (!event.msg.test_test) {
           done(new Error('field _test was not renamed: ' + JSON.stringify(event.msg)))
         } else {
-          if (event.msg.test === 'test') {
+          if (event.msg.test_test === 'test') {
             done()
           }
         }
@@ -148,7 +148,7 @@ describe('Logsene log ', function () {
       logsene.once('error', function (event) {
         done(event)
       })
-      logsene.log('info', 'test', {_test: 'test'})
+      logsene.log('info', 'test', {'_test.test': 'test'})
     } catch (err) {
       done(err)
     }
