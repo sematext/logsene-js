@@ -32,7 +32,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
-  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL ||'https://logsene-receiver.sematext.com/_bulk')
+  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
   this.hostname = os.hostname()
@@ -112,7 +112,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
-      msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x] 
+      msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
     } else {
       msg[x] = fields[x]
     }
@@ -162,8 +162,8 @@ Logsene.prototype.send = function (callback) {
     return
   }
   var req = request.post(options, function (err, res) {
-    if (err) {
-      self.emit('error', {source: 'logsene', err: err})
+    if (err || (res && res.statusCode > 399)) {
+      self.emit('error', {source: 'logsene', err: (err || res.body)})
       if (self.persistence) {
         options.agent = false
         self.db.store({options: options}, function () {
@@ -192,8 +192,8 @@ Logsene.prototype.shipFile = function (name, data, cb) {
     if (cb) {
       cb(err, res)
     }
-    if (err) {
-      self.emit('error', {source: 'logsene', err: err})
+    if (err || (res && res.statusCode > 399)) {
+      self.emit('error', {source: 'logsene', err: (err || res.body)})
       if (self.persistence) {
         options.agent = false
         self.db.store({options: options}, function () {
