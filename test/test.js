@@ -8,19 +8,21 @@ if (!process.env.LOGSENE_URL) {
 
 console.log('Receiver: ' + process.env.LOGSENE_URL)
 console.log('Token: ' + process.env.LOGSENE_TOKEN)
+
 var http = require('http')
+var httpStatusToReturn = 200
 http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'text/plain'})
+  res.writeHead(httpStatusToReturn, {'Content-Type': 'text/plain'})
   req.on('data', function (data) {
     // console.log(data.toString().substring(0,10))
   })
-  req.on('end', function () {
-    res.end('{"code":"200"}\n')
-  })
-// console.log(req.path)
+  var body = JSON.stringify({error: 'bad request', status: 400})
+  if (httpStatusToReturn === 200)
+    body = 'OK'
+  res.end(body)
 }).listen(19200, '127.0.0.1')
 
-var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 30
+var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 35
 describe('Logsene Load Test ', function () {
   it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
@@ -62,6 +64,7 @@ describe('Logsene Load Test ', function () {
 
       logsene.on('log', evtH)
       logsene.once('error', function (event) {
+        console.log(event)
         done(event)
       })
       logsene.on('error', console.log)
@@ -167,12 +170,36 @@ describe('Logsene log ', function () {
         done()
       })
       logsene.once('error', function (event) {
+        console.log(event)
         done(event)
       })
       logsene.on('error', console.log)
       for (var i = 0; i <= 100; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
       }
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('transmit fail with status > 399 generates error event', function (done) {
+    this.timeout(20000)
+    try {
+      httpStatusToReturn = 501
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      logsene.once('log', function (event) {
+        // this should not happen in this test case 
+        done(event)
+      })
+      logsene.once('error', function (event) {
+        // this is the error event we expect
+        done()
+        console.log('\t' + event.err)
+
+        // reset to 200 for next test ...
+        httpStatusToReturn = 200
+      })
+      logsene.log('info', 'test message')
+      logsene.send()
     } catch (err) {
       done(err)
     }
