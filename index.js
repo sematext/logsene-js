@@ -88,8 +88,10 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     this.db.syncFileListFromDir()
     this.db.on('retransmit-req', function (event) {
       this.shipFile(event.fileName, event.buffer, function (err, res) {
-        this.db.rmFile(event.fileName)
-        this.db.retransmitNext()
+        if (err || true) { // remove in any case
+          this.db.rmFile(event.fileName)
+          this.db.retransmitNext()
+        }
       }.bind(this))
     }.bind(this))
   }
@@ -163,7 +165,7 @@ Logsene.prototype.send = function (callback) {
   }
   var req = request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
-      self.emit('error', {source: 'logsene', err: (err || res.body)})
+      self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
         options.agent = false
         self.db.store({options: options}, function () {
@@ -193,7 +195,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err || (res && res.statusCode > 399)) {
-      self.emit('error', {source: 'logsene', err: (err || res.body)})
+      self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
         options.agent = false
         self.db.store({options: options}, function () {
