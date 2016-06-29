@@ -192,11 +192,14 @@ describe('Logsene log ', function () {
       })
       logsene.once('error', function (event) {
         // this is the error event we expect
-        done()
-        console.log('\t' + event.err)
-
         // reset to 200 for next test ...
         httpStatusToReturn = 200
+        if (event.err && event.err.message && event.err.httpStatus) {
+          done()
+        } else {
+          done(new Error('missing message field and status code in error event'))
+        }
+        console.log('\t' + JSON.stringify(event.err))
       })
       logsene.log('info', 'test message')
       logsene.send()
