@@ -73,7 +73,10 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS})
+  this.httpAgent = new Agent({
+    maxSockets: MAX_CLIENT_SOCKETS, 
+    rejectUnauthorized: (Boolean(process.env.TLS_REJECT_UNAUTHORIZED) || false)
+  })
 }
 var DiskBuffer = require('./DiskBuffer.js')
 
