@@ -73,10 +73,7 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({
-    maxSockets: MAX_CLIENT_SOCKETS, 
-    rejectUnauthorized: (Boolean(process.env.TLS_REJECT_UNAUTHORIZED) || false)
-  })
+  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS})
 }
 var DiskBuffer = require('./DiskBuffer.js')
 
@@ -86,7 +83,7 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     this.db = DiskBuffer.createDiskBuffer({
       tmpDir: tmpDir,
       maxStoredRequests: MAX_STORED_REQUESTS,
-      interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 120000
+      interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 60000
     })
     this.db.syncFileListFromDir()
     this.db.on('retransmit-req', function (event) {
@@ -171,7 +168,8 @@ Logsene.prototype.send = function (callback) {
       self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
         options.agent = false
-        self.db.store({options: options}, function () {
+        options.body=options.body.toString()
+        self.db.store(options, function () {
           delete options.body
         })
         return
@@ -191,6 +189,7 @@ Logsene.prototype.send = function (callback) {
 Logsene.prototype.shipFile = function (name, data, cb) {
   var self = this
   var options = JSON.parse(data)
+  options.body = options.body.toString()
   options.url = self.url
   options.agent = self.httpAgent
   var req = request.post(options, function (err, res) {
@@ -198,10 +197,11 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err || (res && res.statusCode > 399)) {
+      if(res) console.log(res.statusCode + ' ' + res.body)
       self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
         options.agent = false
-        self.db.store({options: options}, function () {
+        self.db.store(options, function () {
           delete options.body
         })
       }
