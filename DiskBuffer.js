@@ -14,14 +14,14 @@ function log (message) {
 }
 
 function DiskBuffer (options) {
-  this.options = options || {tmpDir: os.getTempFileDir(), maxStoredRequests: 1000}
+  this.options = options || {tmpDir: os.tmpDir(), maxStoredRequests: 1000}
   this.tmpDir = options.tmpDir
   this.maxStoredRequests = options.maxStoredRequests || 1000
   this.storedFiles = []
-  this.iterator = -1
+  this.retransmitIndex=0
   this.tid = setInterval(function () {
     this.retransmitNext()
-  }.bind(this), options.interval || 10000)
+  }.bind(this), options.interval || 60000)
   mkpath(this.tmpDir, function (err) {
     if (err) {
       log('Error: can not activate disk buffer for logsene-js: ' + err)
@@ -34,9 +34,9 @@ DiskBuffer.prototype.retransmitNext = function () {
   if (this.storedFiles.length === 0) {
     return
   }
-
-  var index = 0 // this.storedFiles.length-1
-  if (index < 0) {
+  var index = this.retransmitIndex++ 
+  if (index >= this.storedFiles.length-1) {
+    this.retransmitIndex = 0
     return
   }
   log('# of files: ' + this.storedFiles.length + ' current file:' + index)
@@ -77,7 +77,9 @@ DiskBuffer.prototype.syncFileListFromDir = function () {
           var fStat = fs.statSync(fName)
           var now = Date.now()
           if (now - fStat.atime.getTime() > 1000 * 60 * 5) {
-            log('removing 5 min old .lock file')
+            // a bulk req. should no take longer than 5 min
+            log('rename 5 min old .lock file to .bulk: ' + fName)
+            fs.renameSync(fName, fName.substring(0,fName.length-5))
             fs.unlinkSync(fName)
           }
         } catch (fsErr) {
@@ -101,9 +103,13 @@ DiskBuffer.prototype.addFile = function (fileName) {
 
 DiskBuffer.prototype.rmFile = function (fileName) {
   var index = this.storedFiles.indexOf(fileName.replace('.lock', ''))
-  log('rm file:' + fileName)
+  if (index === -1) {
+    // already done before
+    return
+  }
   try {
     fs.unlinkSync(fileName)
+    log('rm file:' + fileName)  
     this.emit('removed', {fileName: fileName})
   } catch (err) {
     log('rmFile: could not delete file:' + err.message)
@@ -124,11 +130,13 @@ DiskBuffer.prototype.getFileName = function () {
 DiskBuffer.prototype.store = function (data, cb) {
   this.storedRequestCount++
   this.checkTmpDir = true
-  if (this.storedRequestCount > this.maxStoredRequests) {
-    cb(new Error('DiskBuffer.store(): limit of max. stored requests reached, failed req. will not be stored'))
-    return
-  }
   var fn = this.getFileName()
+  if (this.storedRequestCount > this.maxStoredRequests) {
+    log('disk buffer limit reached, drop old file:' + this.storedFiles[0])
+    if (this.storedFiles.length>0) {
+      this.rmFile(this.storedFiles[0])  
+    }
+  }
   this.addFile(fn)
   fs.writeFile(fn, JSON.stringify(data), function (err) {
     if (cb & err) {
