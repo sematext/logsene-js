@@ -37,10 +37,10 @@ DiskBuffer.prototype.retransmitNext = function () {
   var index = this.retransmitIndex++ 
   if (index >= this.storedFiles.length-1) {
     this.retransmitIndex = 0
-    return
+    index = 0
   }
   log('# of files: ' + this.storedFiles.length + ' current file:' + index)
-  if (this.storedFiles.length > index) {
+  if (this.storedFiles.length >= index) {
     try {
       var fileName = this.storedFiles[index]
       if (!fileName) {
@@ -102,9 +102,13 @@ DiskBuffer.prototype.addFile = function (fileName) {
 }
 
 DiskBuffer.prototype.rmFile = function (fileName) {
+  if (!fileName) {
+    return
+  }
   var index = this.storedFiles.indexOf(fileName.replace('.lock', ''))
   if (index === -1) {
     // already done before
+    // this.emit('removed', {fileName: fileName})
     return
   }
   try {
@@ -113,6 +117,7 @@ DiskBuffer.prototype.rmFile = function (fileName) {
     this.emit('removed', {fileName: fileName})
   } catch (err) {
     log('rmFile: could not delete file:' + err.message)
+    this.emit('removed', {fileName: fileName})
   // ignore when file was already deleted
   }
   if (index > -1) {
