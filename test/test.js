@@ -92,6 +92,59 @@ describe('Logsene constructor', function () {
   })
 })
 
+describe('Logsene DiskBuffer ', function () {
+  it('re-transmit', function (done) {
+    this.timeout(120000)
+    process.env.DEBUG_LOGSENE_DISK_BUFFER = true
+    var DiskBuffer = require('../DiskBuffer.js')
+    var db = DiskBuffer.createDiskBuffer({
+      tmpDir: './tmp',
+      interval: 1000
+    })
+    db.syncFileListFromDir()
+    db.on('retransmit-req', function (event) {
+      db.rmFile(event.fileName)
+      db.retransmitNext()
+    })
+    db.once('removed', function () {
+      done()
+    })
+    setTimeout(function () {
+      db.store({message: 'hello'}, function (e,d) {
+        db.retransmitNext()
+      })
+    }, 1000)
+  })
+})
+
+describe('Logsene persistance ', function () {
+  it('re-transmit', function (done) {
+    this.timeout(70000)
+    try {
+      process.env.LOGSENE_DISK_BUFFER_INTERVAL = 2000
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test')
+      var url = logsene.url
+      logsene.diskBuffer(true, './mocha-test')
+      logsene.setUrl('http://notreachable.test')
+      logsene.db.once('removed', function (event) {
+        done()
+      })
+      logsene.on('error', function (err) {
+        if (err) {
+          logsene.setUrl(url)
+        }
+      })
+      setTimeout(function () {
+        for (var i = 0; i <= 1001; i++) {
+          logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34})
+        }
+      }, 1000)
+    } catch (err) {
+      done(err)
+    }
+  })
+})
+
 describe('Logsene log ', function () {
   it('should not throw circular reference error', function (done) {
     var logsene = new Logsene(token, 'test')
@@ -241,55 +294,4 @@ describe('Logsene log ', function () {
   })
 })
 
-describe('Logsene DiskBuffer ', function () {
-  it('re-transmit', function (done) {
-    this.timeout(50000)
-    process.env.DEBUG_LOGSENE_DISK_BUFFER = true
-    var DiskBuffer = require('../DiskBuffer.js')
-    var db = DiskBuffer.createDiskBuffer({
-      tmpDir: './tmp',
-      interval: 1000
-    })
-    db.syncFileListFromDir()
-    db.on('retransmit-req', function (event) {
-      db.rmFile(event.fileName)
-      db.retransmitNext()
-    })
-    db.once('removed', function () {
-      done()
-    })
-    setTimeout(function () {
-      db.store({message: 'hello'}, function () {
-        db.retransmitNext()
-      })
-    }, 1000)
-  })
-})
 
-describe('Logsene persistance ', function () {
-  it('re-transmit', function (done) {
-    this.timeout(70000)
-    try {
-      process.env.LOGSENE_DISK_BUFFER_INTERVAL = 2000
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test')
-      var url = logsene.url
-      logsene.diskBuffer(true, './mocha-test')
-      logsene.setUrl('http://notreachable.test')
-      logsene.db.once('removed', function (event) {
-        done()
-      })
-      logsene.on('error', function (err) {
-        if (err) {
-          logsene.setUrl(url)
-        }
-      })
-      setTimeout(function () {
-        for (var i = 0; i <= 1001; i++) {
-          logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34})
-        }
-      }, 1000)
-    } catch (err) {
-      done(err)
-    }
-  })
-})
