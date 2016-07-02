@@ -188,7 +188,18 @@ Logsene.prototype.send = function (callback) {
 
 Logsene.prototype.shipFile = function (name, data, cb) {
   var self = this
-  var options = JSON.parse(data)
+  var options = null 
+  try { 
+    options = JSON.parse(data)
+  } catch (err) {
+    // wrong file format
+  }
+  if (options == null || options.options) {
+    // wrong file format?
+    // cleanup from earlier versions
+    // self.db.rmFile(name)
+    return cb(new Error('wrong bulk file format'))
+  }
   options.body = options.body.toString()
   options.url = self.url
   options.agent = self.httpAgent
@@ -197,8 +208,9 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err || (res && res.statusCode > 399)) {
-      if(res) console.log(res.statusCode + ' ' + res.body)
-      self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
+      if(res) {
+        self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})  
+      }
       if (self.persistence) {
         options.agent = false
         self.db.store(options, function () {
@@ -206,8 +218,8 @@ Logsene.prototype.shipFile = function (name, data, cb) {
         })
       }
     } else {
-      self.emit('file shipped', {file: name, count: options.count})
-      self.emit('rt', {count: options.count, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
+      self.emit('file shipped', {file: name, count: options.logCount})
+      self.emit('rt', {count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
     }
     req.destroy()
   })
