@@ -186,10 +186,11 @@ describe('Logsene log ', function () {
     try {
       httpStatusToReturn = 501
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
-      logsene.once('log', function (event) {
+      //logsene.once('log', function (event) {
         // this should not happen in this test case 
-        done(event)
-      })
+        //done(event)
+      //})
+
       logsene.once('error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
@@ -207,6 +208,37 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
+  it('transmit fail keeps flat memory footprint', function (done) {
+    this.timeout(30000)
+    try {
+      var errorCounter = 0
+      httpStatusToReturn = 501
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var hu = process.memoryUsage().rss
+      logsene.on('error', function (event) {
+        //console.log(process.memoryUsage())
+        diff = (process.memoryUsage().rss - hu)/1024/1024
+        //console.log(hu/1024/1024)
+        errorCounter++
+        //console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
+        if (errorCounter >= 100000/1000) {
+          if (diff < 200)
+            done()
+          else {
+            console.log()
+            done(new Error('too much memory used:' + diff + ' MB' + JSON.stringify(process.memoryUsage())))
+          }
+        }
+      })
+      for (var i=0; i<100000; i++)
+      {
+        logsene.log('info', 'test message')  
+      }
+      logsene.send()
+    } catch (err) {
+      done(err)
+    }
+  })
 })
 
 describe('Logsene DiskBuffer ', function () {
@@ -216,7 +248,7 @@ describe('Logsene DiskBuffer ', function () {
     var DiskBuffer = require('../DiskBuffer.js')
     var db = DiskBuffer.createDiskBuffer({
       tmpDir: './tmp',
-      interval: 2000
+      interval: 1000
     })
     db.syncFileListFromDir()
     db.on('retransmit-req', function (event) {
