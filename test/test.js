@@ -275,6 +275,7 @@ describe('Logsene log ', function () {
         errorCounter++
         //console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
         if (errorCounter >= 100000/1000) {
+          errorCounter=0
           if (diff < 200)
             done()
           else {
