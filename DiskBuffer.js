@@ -32,13 +32,14 @@ util.inherits(DiskBuffer, events.EventEmitter)
 
 DiskBuffer.prototype.retransmitNext = function () {
   if (this.storedFiles.length === 0) {
+    this.retransmitIndex = 0
     return
   }
-  var index = this.retransmitIndex++ 
-  if (index >= this.storedFiles.length-1) {
-    this.retransmitIndex = 0
-    index = 0
+  this.retransmitIndex = this.retransmitIndex + 1
+  if (this.retransmitIndex >= this.storedFiles.length) {
+    this.retransmitIndex = 0 
   }
+  var index = this.retransmitIndex 
   log('# of files: ' + this.storedFiles.length + ' current file:' + index)
   if (this.storedFiles.length >= index) {
     try {
