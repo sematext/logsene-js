@@ -8,8 +8,10 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var MAX_LOGS = Number(process.env.LOGSENE_BULK_SIZE) || 1000 // max 1000 messages per bulk req.
-var MAX_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) ||  1024 * 1024 // max 5 MB per http request
+
+
+var MIN_LOGSENE_BULK_SIZE = 200
+var MAX_LOGSENE_BULK_SIZE = 10000
 var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
 var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
 var request = require('request')
@@ -24,6 +26,27 @@ var initialBufferSize = 1024 * 256
 var incrementBuffer = 1024 * 256
 var startsWithUnderscore = /^_/
 var hasDots = /\./g
+
+// upper limit a user could set
+var MAX_LOGSENE_BULK_SIZE_BYTES = 20 * 1024 * 1024
+// lower limit a user could set
+var MIN_LOGSENE_BULK_SIZE_BYTES = 1024 * 1024
+var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) ||  1024 * 1024 // max 5 MB per http request   
+// check limits set by users, and adjust if those would lead to problematic settings 
+if (MAX_LOGSENE_BUFFER_SIZE > MAX_LOGSENE_BULK_SIZE_BYTES) {
+  MAX_LOGSENE_BUFFER_SIZE = MAX_LOGSENE_BULK_SIZE_BYTES
+}
+if (MAX_LOGSENE_BUFFER_SIZE<MIN_LOGSENE_BULK_SIZE_BYTES) {
+  MAX_LOGSENE_BUFFER_SIZE = MIN_LOGSENE_BULK_SIZE_BYTES
+}
+var LOGSENE_BULK_SIZE = Number(process.env.LOGSENE_BULK_SIZE) || 1000 // max 1000 messages per bulk req.
+if (LOGSENE_BULK_SIZE > MAX_LOGSENE_BULK_SIZE) {
+  LOGSENE_BULK_SIZE = MAX_LOGSENE_BULK_SIZE
+}
+if (LOGSENE_BULK_SIZE < MIN_LOGSENE_BULK_SIZE) {
+  LOGSENE_BULK_SIZE = MIN_LOGSENE_BULK_SIZE
+}
+
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -33,6 +56,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
+  
   this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
@@ -127,7 +151,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
-  if (this.logCount === MAX_LOGS || this.bulkReq.size()>MAX_BUFFER_SIZE) {
+  if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size()>MAX_LOGSENE_BUFFER_SIZE) {
     this.bulkReq.end()
     this.send()
   }
