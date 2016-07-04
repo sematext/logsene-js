@@ -8,8 +8,9 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var MAX_LOGS = process.env.LOGSENE_BULK_SIZE || 1000
-var MAX_STORED_REQUESTS = process.env.LOGSENE_MAX_STORED_REQUESTS || 10000
+var MAX_LOGS = Number(process.env.LOGSENE_BULK_SIZE) || 1000 // max 1000 messages per bulk req.
+var MAX_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) ||  1024 * 1024 // max 5 MB per http request
+var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
 var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
 var request = require('request')
 var os = require('os')
@@ -126,7 +127,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
-  if (this.logCount === MAX_LOGS) {
+  if (this.logCount === MAX_LOGS || this.bulkReq.size()>MAX_BUFFER_SIZE) {
     this.bulkReq.end()
     this.send()
   }
