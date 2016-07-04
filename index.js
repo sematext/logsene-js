@@ -22,8 +22,8 @@ var util = require('util')
 var path = require('path')
 var stringifySafe = require('json-stringify-safe')
 var streamBuffers = require('stream-buffers')
-var initialBufferSize = 1024 * 256
-var incrementBuffer = 1024 * 256
+var initialBufferSize = 1024 * 1024
+var incrementBuffer = 1024 * 1024
 var startsWithUnderscore = /^_/
 var hasDots = /\./g
 
