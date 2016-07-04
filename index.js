@@ -8,12 +8,6 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-
-
-var MIN_LOGSENE_BULK_SIZE = 200
-var MAX_LOGSENE_BULK_SIZE = 10000
-var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
-var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
 var request = require('request')
 var os = require('os')
 var events = require('events')
@@ -22,10 +16,19 @@ var util = require('util')
 var path = require('path')
 var stringifySafe = require('json-stringify-safe')
 var streamBuffers = require('stream-buffers')
+
+// settings for node stream buffer
 var initialBufferSize = 1024 * 1024
 var incrementBuffer = 1024 * 1024
+// re-usable regular expressions
 var startsWithUnderscore = /^_/
 var hasDots = /\./g
+
+// settings for bulk requests
+var MIN_LOGSENE_BULK_SIZE = 200
+var MAX_LOGSENE_BULK_SIZE = 10000
+var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
+var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
 
 // upper limit a user could set
 var MAX_LOGSENE_BULK_SIZE_BYTES = 20 * 1024 * 1024
