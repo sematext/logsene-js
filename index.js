@@ -23,7 +23,10 @@ var incrementBuffer = 1024 * 1024
 // re-usable regular expressions
 var startsWithUnderscore = /^_/
 var hasDots = /\./g
-
+// SPM_REPORTED_HOSTNAME might be set by Sematext Docker Agent
+// the container hostname might not be helpful ...
+// this might be removed after next release of SDA setting xLogseneOrigin from SDA
+var xLogseneOrigin = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
 // settings for bulk requests
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
@@ -59,7 +62,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
-  
+  this.xLogseneOrigin = xLogseneOrigin
   this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
   this.type = type || 'logs'
@@ -177,7 +180,8 @@ Logsene.prototype.send = function (callback) {
     headers: {
       'User-Agent': 'logsene-js',
       'Content-Type': 'application/json',
-      'Connection': 'Close'
+      'Connection': 'Close',
+      'x-logsene-origin': this.xLogseneOrigin || xLogseneOrigin
     },
     body: this.bulkReq.getContents(),
     agent: self.httpAgent,
