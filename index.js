@@ -97,7 +97,7 @@ function Logsene (token, type, url, storageDirectory) {
 util.inherits(Logsene, events.EventEmitter)
 
 Logsene.prototype.setUrl = function (url) {
-  this.url = url
+  this.url = url.replace('_bulk', this.token + '/_bulk')
   var Agent = null
   if (/^https/.test(url)) {
     Agent = require('https').Agent
