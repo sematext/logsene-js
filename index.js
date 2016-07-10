@@ -63,8 +63,8 @@ function Logsene (token, type, url, storageDirectory) {
     throw new Error('Logsene token not specified')
   }
   this.xLogseneOrigin = xLogseneOrigin
-  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.token = token
+  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.type = type || 'logs'
   this.hostname = os.hostname()
   this.bulkReq = new streamBuffers.WritableStreamBuffer({
