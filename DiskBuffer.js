@@ -167,6 +167,9 @@ DiskBuffer.prototype.store = function (data, cb) {
 function createDiskBuffer (options) {
   if (!diskBufferObjectCache[options.tmpDir]) {
     diskBufferObjectCache[options.tmpDir] = new DiskBuffer(options)
+    diskBufferObjectCache[options.tmpDir].isCached = false
+  } else {
+    diskBufferObjectCache[options.tmpDir].isCached = true
   }
   return diskBufferObjectCache[options.tmpDir]
 }

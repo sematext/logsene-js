@@ -124,14 +124,18 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     })
     this.db.syncFileListFromDir()
     var self = this
-    this.db.on('retransmit-req', function (event) {
+    if (!this.db.isCached) {
+      // only the first instance registers for retransmit-req
+      // to avoid double event handling from multiple instances
+      this.db.on('retransmit-req', function (event) {
       self.shipFile(event.fileName, event.buffer, function (err, res) {
         if (!err && res) { 
           self.db.rmFile.call(self.db, event.fileName)
           self.db.retransmitNext.call(self.db)
         } 
-      })
-    })
+        })
+      })  
+    }
   }
   this.persistence = enabled
 }
