@@ -90,7 +90,38 @@ describe('Logsene constructor', function () {
     })
     done()
   })
+  it('should have "/token/_bulk" in url', function (done) {
+      try {
+        var token = 'YOUR_TEST_TOKEN'
+        var re = new RegExp ('\/' + token + '\/' + '_bulk') 
+        var l = new Logsene(token)
+        if (l.url.indexOf (token) > -1 && re.test(l.url)) {
+          done()
+          console.log('\tURL: ' + l.url)
+        } else {
+          done(new Error('URL does not contain token: ' + l.url))  
+        }
+      } catch (err) {
+        // nothing to do here
+      }
+    })
+  it('should have "/_bulk" in url, when only host:port is specified', function (done) {
+      try {
+        var token = 'YOUR_TEST_TOKEN'
+        var re = new RegExp ('\/' + token + '\/' + '_bulk') 
+        var l = new Logsene(token, 'test', 'http://localhost:9200')
+        if (l.url.indexOf (token) > -1 && re.test(l.url)) {
+          done()
+          console.log('\tURL: ' + l.url)
+        } else {
+          done(new Error('URL does not contain token: ' + l.url))  
+        }
+      } catch (err) {
+        // nothing to do here
+      }
+    })
 })
+
 
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
