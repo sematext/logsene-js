@@ -132,17 +132,17 @@ describe('Logsene DiskBuffer ', function () {
       tmpDir: './tmp',
       interval: 1000
     })
-    db.syncFileListFromDir()
+    db.syncFileListFromDir.call(db)
     db.on('retransmit-req', function (event) {
-      db.rmFile(event.fileName)
-      db.retransmitNext()
+      db.rmFile.call(db, event.fileName)
+      db.retransmitNext.call(db)
     })
     db.once('removed', function () {
       done()
     })
     setTimeout(function () {
       db.store({message: 'hello'}, function (e,d) {
-        db.retransmitNext()
+        db.retransmitNext.call(db)
       })
     }, 1000)
   })

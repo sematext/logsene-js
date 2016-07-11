@@ -14,14 +14,16 @@ function log (message) {
 }
 
 function DiskBuffer (options) {
+  this.fileId  = 0
   this.options = options || {tmpDir: os.tmpDir(), maxStoredRequests: 1000}
   this.tmpDir = options.tmpDir
   this.maxStoredRequests = options.maxStoredRequests || 1000
   this.storedFiles = []
   this.retransmitIndex=0
+  var self = this
   this.tid = setInterval(function () {
-    this.retransmitNext()
-  }.bind(this), options.interval || 60000)
+    self.retransmitNext.call(self)
+  }, options.interval || 60000)
   mkpath(this.tmpDir, function (err) {
     if (err) {
       log('Error: can not activate disk buffer for logsene-js: ' + err)
@@ -45,20 +47,23 @@ DiskBuffer.prototype.retransmitNext = function () {
     try {
       var fileName = this.storedFiles[index]
       if (!fileName) {
-        log('filename not in list:' + fileName)
+        log('filename not in list:' + fileName + ' ' + this.storedFiles.length)
         return
       }
       log('retransmitNext: ' + fileName)
       try {
         fs.statSync(fileName)
       } catch (fsStatErr) {
-        this.rmFile(fileName)
+        // this.rmFile(fileName)
         return
       }
       var lockedFileName = fileName + '.lock'
       fs.renameSync(fileName, lockedFileName)
       var buffer = fs.readFileSync(lockedFileName)
-      this.emit('retransmit-req', {fileName: lockedFileName, buffer: buffer})
+      var self = this
+      setImmediate(function () {
+        self.emit('retransmit-req', {fileName: lockedFileName, buffer: buffer})  
+      })
     } catch (err) {
       console.error('retransmitNext: ' + err.message)
     }
@@ -107,47 +112,52 @@ DiskBuffer.prototype.rmFile = function (fileName) {
     return
   }
   var index = this.storedFiles.indexOf(fileName.replace('.lock', ''))
-  if (index === -1) {
+  if (index < 0) {
     // already done before
     // this.emit('removed', {fileName: fileName})
+    log('rmFile: ' + fileName + ' not in list')
     return
   }
+
   try {
     fs.unlinkSync(fileName)
     log('rm file:' + fileName)  
     this.emit('removed', {fileName: fileName})
   } catch (err) {
     log('rmFile: could not delete file:' + err.message)
+    // ignore when file was already deleted
     this.emit('removed', {fileName: fileName})
-  // ignore when file was already deleted
-  }
-  if (index > -1) {
-    this.storedFiles.splice(index, 1)
+  } finally {
+    if (index > -1) {
+      this.storedFiles.splice(index, 1)
     return true
-  } else {
-    return false
+    } else {
+      return false
+    }
   }
 }
 
 DiskBuffer.prototype.getFileName = function () {
-  return path.join(this.tmpDir, this.storedFiles.length + '_' + new Date().getTime() + '.bulk')
+  this.fileId += 1
+  return path.join(this.tmpDir, this.fileId + '_' + new Date().getTime() + '.bulk')
 }
 
 DiskBuffer.prototype.store = function (data, cb) {
+  var self = this
   this.storedRequestCount++
   this.checkTmpDir = true
   var fn = this.getFileName()
   if (this.storedRequestCount > this.maxStoredRequests) {
     log('disk buffer limit reached, drop old file:' + this.storedFiles[0])
-    if (this.storedFiles.length>0) {
-      this.rmFile(this.storedFiles[0])  
+    if (this.storedFiles.length > this.maxStoredRequests) {
+      self.rmFile.call(self, this.storedFiles[0])  
     }
   }
-  this.addFile(fn)
   fs.writeFile(fn, JSON.stringify(data), function (err) {
     if (cb & err) {
       return cb(err)
     }
+    self.addFile.call(self, fn)
     if (cb) {
       return cb(null, fn)
     }

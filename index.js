@@ -123,14 +123,15 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
       interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 60000
     })
     this.db.syncFileListFromDir()
+    var self = this
     this.db.on('retransmit-req', function (event) {
-      this.shipFile(event.fileName, event.buffer, function (err, res) {
-        if (err || true) { // remove in any case
-          this.db.rmFile(event.fileName)
-          this.db.retransmitNext()
-        }
-      }.bind(this))
-    }.bind(this))
+      self.shipFile(event.fileName, event.buffer, function (err, res) {
+        if (!err && res) { 
+          self.db.rmFile.call(self.db, event.fileName)
+          self.db.retransmitNext.call(self.db)
+        } 
+      })
+    })
   }
   this.persistence = enabled
 }
@@ -246,16 +247,15 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err || (res && res.statusCode > 399)) {
-      if(res) {
-        self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})  
-      }
-      if (self.persistence) {
-        options.agent = false
-        self.db.store(options, function () {
-          delete options.body
-        })
+      errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
+      self.emit('error', errObj)
+      if (cb) {
+        cb(errObj)
       }
     } else {
+      if (cb) {
+        cb(null, {file: name, count: options.logCount})
+      }
       self.emit('file shipped', {file: name, count: options.logCount})
       self.emit('rt', {count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
     }
