@@ -1,7 +1,9 @@
 # Logs
 logs
 *.log
-
+tmp
+mocha-test
+YOUR_TEST_TOKEN
 # Runtime data
 pids
 *.pid
