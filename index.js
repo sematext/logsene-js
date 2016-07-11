@@ -132,7 +132,9 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
         if (!err && res) { 
           self.db.rmFile.call(self.db, event.fileName)
           self.db.retransmitNext.call(self.db)
-        } 
+        } else {
+          self.db.unlock.call(self.db, event.fileName)
+        }
         })
       })  
     }
@@ -251,7 +253,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       cb(err, res)
     }
     if (err || (res && res.statusCode > 399)) {
-      errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
+      var errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
       self.emit('error', errObj)
       if (cb) {
         cb(errObj)

@@ -32,6 +32,12 @@ function DiskBuffer (options) {
 }
 util.inherits(DiskBuffer, events.EventEmitter)
 
+DiskBuffer.prototype.unlock = function (fileName) {
+  try {
+    fs.renameSync(fileName, fileName.replace('.lock',''))
+  } catch (err) {
+  }
+}
 DiskBuffer.prototype.retransmitNext = function () {
   if (this.storedFiles.length === 0) {
     this.retransmitIndex = 0
@@ -65,7 +71,7 @@ DiskBuffer.prototype.retransmitNext = function () {
         self.emit('retransmit-req', {fileName: lockedFileName, buffer: buffer})  
       })
     } catch (err) {
-      console.error('retransmitNext: ' + err.message)
+      // console.error('retransmitNext error: ' + err.message)
     }
   }
 }
