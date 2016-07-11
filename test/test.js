@@ -137,7 +137,8 @@ describe('Logsene DiskBuffer ', function () {
       db.rmFile.call(db, event.fileName)
       db.retransmitNext.call(db)
     })
-    db.once('removed', function () {
+    db.once('removed', function (fileName) {
+      db.unlock(fileName)
       done()
     })
     setTimeout(function () {

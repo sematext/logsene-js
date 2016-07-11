@@ -121,10 +121,8 @@ DiskBuffer.prototype.rmFile = function (fileName) {
   if (index < 0) {
     // already done before
     // this.emit('removed', {fileName: fileName})
-    log('rmFile: ' + fileName + ' not in list')
     return
   }
-
   try {
     fs.unlinkSync(fileName)
     log('rm file:' + fileName)  
