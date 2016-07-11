@@ -4,6 +4,7 @@ logs
 tmp
 mocha-test
 YOUR_TEST_TOKEN
+.DS_Store
 # Runtime data
 pids
 *.pid
