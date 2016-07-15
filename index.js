@@ -27,6 +27,8 @@ var hasDots = /\./g
 // the container hostname might not be helpful ...
 // this might be removed after next release of SDA setting xLogseneOrigin from SDA
 var xLogseneOrigin = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
+// limit message size 
+var MAX_MESSAGE_FIELD_SIZE = Number(process.env.MAX_MESSAGE_FIELD_SIZE) || 1024 * 240 // 240 K, leave 
 // settings for bulk requests
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
@@ -62,6 +64,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
+  this.maxMessageFieldSize = MAX_MESSAGE_FIELD_SIZE
   this.xLogseneOrigin = xLogseneOrigin
   this.token = token
   this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
@@ -166,6 +169,16 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
+  if (msg.message && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
+    var cutMsg = new Buffer(this.maxMessageFieldSize)
+    cutMsg.write(msg.message)
+    msg.message = cutMsg.toString() 
+    if (msg.originalLine) {
+      // when messge is too large and logagent added originalLine, 
+      // this should be removed to stay under the limits in receiver
+      delete msg.originalLine
+    }
+  } 
   this.emit('logged', {msg: msg})
   this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   this.bulkReq.write(stringifySafe(msg) + '\n')

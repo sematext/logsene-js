@@ -197,6 +197,30 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
+  it('should limit message field size, and remove originalLine when too large', function (done) {
+    var logsene = new Logsene(token, 'test')
+    //logsene.MAX_MESSAGE_FIELD_SIZE=5
+    logsene.on('error', console.log)
+    var longMessage = new Buffer(logsene.maxMessageFieldSize*2)
+    longMessage = longMessage.fill('1').toString()
+    try {
+      logsene.log('info', longMessage, {originalLine: longMessage}, function (err, msg) {
+        if (err) {
+          console.log(err)
+          return done(err)
+        }
+        var messageSize = Buffer.byteLength(msg.message, 'utf8')
+        if (messageSize == logsene.maxMessageFieldSize && !msg.originalLine) {
+          done()
+        } else {
+          console.log(msg)
+          done(new Error('Message is too long:' + messageSize))
+        }
+      })
+    } catch (err) {
+      done(err)
+    }
+  })
   it('logs have default fields message, @timestamp, host, ip + custom fields', function (done) {
     this.timeout(20000)
     try {
