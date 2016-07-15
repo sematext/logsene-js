@@ -24,6 +24,7 @@ Register for a [free account](https://apps.sematext.com/users-web/register.do) o
 - LOGSENE_TMP_DIR - Directory to store failed bulk requests, for later re-transmission. Failed requests are not stored, when LOGSENE_TMP_DIR is not set.
 - LOGSENE_LOG_INTERVAL - Time to collect logs before a bulk request is done. Default 10000 ms
 - LOGSENE_BULK_SIZE - Maximum size of a bulk request. Default 1000.
+- LOGSENE_MAX_MESSAGE_FIELD_SIZE - maximum size of the 'message' field, default 240k
 - LOGSENE_URL - URL for the Logsene receiver. E.g. for On-Premise version. Defaults to Sematext Logsene SaaS receiver https://logsene-receiver.sematext.com/_bulk
 
 ## Security

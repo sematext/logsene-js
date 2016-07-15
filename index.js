@@ -28,7 +28,7 @@ var hasDots = /\./g
 // this might be removed after next release of SDA setting xLogseneOrigin from SDA
 var xLogseneOrigin = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
 // limit message size 
-var MAX_MESSAGE_FIELD_SIZE = Number(process.env.MAX_MESSAGE_FIELD_SIZE) || 1024 * 240 // 240 K, leave 
+var MAX_MESSAGE_FIELD_SIZE = Number(process.env.LOGSENE_MAX_MESSAGE_FIELD_SIZE) || 1024 * 240 // 240 K, leave 
 // settings for bulk requests
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
@@ -178,12 +178,13 @@ Logsene.prototype.log = function (level, message, fields, callback) {
       // this should be removed to stay under the limits in receiver
       delete msg.originalLine
     }
+    msg.logsene_client_warning='Warning: message field too large > ' + this.maxMessageFieldSize  +' bytes'
   } 
   this.emit('logged', {msg: msg})
   this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
-  if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size()>MAX_LOGSENE_BUFFER_SIZE) {
+  if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
     this.bulkReq.end()
     this.send()
   }

@@ -210,7 +210,7 @@ describe('Logsene log ', function () {
           return done(err)
         }
         var messageSize = Buffer.byteLength(msg.message, 'utf8')
-        if (messageSize == logsene.maxMessageFieldSize && !msg.originalLine) {
+        if (messageSize == logsene.maxMessageFieldSize && !msg.originalLine && msg.logsene_client_warning) {
           done()
         } else {
           console.log(msg)
