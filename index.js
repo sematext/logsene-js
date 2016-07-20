@@ -154,12 +154,12 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
  */
 Logsene.prototype.log = function (level, message, fields, callback) {
   var type = fields ? fields._type : this.type
-  var elasticsearchId = null   
+  var elasticsearchDocId = null   
   if (fields && fields._type) {
     delete fields._type
   }
   if (fields && fields._id) {
-    elasticsearchId = fields._id
+    elasticsearchDocId = fields._id
   }
   var msg = {'@timestamp': new Date(), message: message, severity: level, host: this.hostname, ip: ipAddress}
   for (var x in fields) {
@@ -184,8 +184,8 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     }
     msg.logsene_client_warning='Warning: message field too large > ' + this.maxMessageFieldSize  +' bytes'
   } 
-  if (elasticsearchId !== null) {
-    this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_id': String(elasticsearchId), '_type': type || this.type}}) + '\n') 
+  if (elasticsearchDocId !== null) {
+    this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n') 
   } else {
     this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')  
   }

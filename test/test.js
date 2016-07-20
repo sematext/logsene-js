@@ -238,7 +238,7 @@ describe('Logsene log ', function () {
       logsene.once('error', function (event) {
         done(event)
       })
-      logsene.log('info', 'test', {testField: 'Test custom field '})
+      logsene.log('info', 'test', {'_id': 'testID', testField: 'Test custom field '})
     } catch (err) {
       done(err)
     }
