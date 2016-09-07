@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+process.setMaxListeners(0)
 var Logsene = require('../index.js')
 var token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
 process.env.LOGSENE_URL = 'http://127.0.0.1:19200/_bulk'
@@ -13,13 +14,14 @@ var http = require('http')
 var httpStatusToReturn = 200
 http.createServer(function (req, res) {
   res.writeHead(httpStatusToReturn, {'Content-Type': 'text/plain'})
-  req.on('data', function (data) {
+  //req.on('data', function (data) {
     // console.log(data.toString().substring(0,10))
-  })
+  //})
   var body = JSON.stringify({error: 'bad request', status: 400})
   if (httpStatusToReturn === 200)
     body = 'OK'
   res.end(body)
+  // res.destroy()
 }).listen(19200, '127.0.0.1')
 
 var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 35
@@ -67,7 +69,6 @@ describe('Logsene Load Test ', function () {
         console.log(event)
         done(event)
       })
-      logsene.on('error', console.log)
       for (var i = 0; i < logCount; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
       }
@@ -266,13 +267,15 @@ describe('Logsene log ', function () {
     }
   })
   it('transmit', function (done) {
-    this.timeout(20000)
+    this.timeout(25000)
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
           done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
+        } else {
+          // done()
         }
       })
       logsene.once('log', function (event) {
@@ -283,7 +286,7 @@ describe('Logsene log ', function () {
         done(event)
       })
       logsene.on('error', console.log)
-      for (var i = 0; i <= 100; i++) {
+      for (var i = 0; i <= 1001; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
       }
     } catch (err) {
@@ -325,13 +328,13 @@ describe('Logsene log ', function () {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       var hu = process.memoryUsage().rss
       logsene.on('error', function (event) {
-        //console.log(process.memoryUsage())
-        diff = (process.memoryUsage().rss - hu)/1024/1024
-        //console.log(hu/1024/1024)
+        // console.log(process.memoryUsage())
+        var diff = (process.memoryUsage().rss - hu) / 1024 / 1024
+        // console.log(hu/1024/1024)
         errorCounter++
-        //console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
+        // console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
         if (errorCounter >= 100000/1000) {
-          errorCounter=0
+          errorCounter = 0
           if (diff < 200)
             done()
           else {
@@ -340,9 +343,8 @@ describe('Logsene log ', function () {
           }
         }
       })
-      for (var i=0; i<100000; i++)
-      {
-        logsene.log('info', 'test message')  
+      for (var i=0; i<100000; i++) {
+        logsene.log('info', 'test message')
       }
       logsene.send()
     } catch (err) {
@@ -350,5 +352,3 @@ describe('Logsene log ', function () {
     }
   })
 })
-
-
