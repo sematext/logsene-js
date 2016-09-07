@@ -8,15 +8,16 @@
  * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
  */
 'user strict'
-var request = require('request')
+var Requester = require('request')
+var util = require('util')
 var os = require('os')
 var events = require('events')
 var ipAddress = require('ip').address()
 var util = require('util')
 var path = require('path')
-var stringifySafe = require('json-stringify-safe')
+var stringifySafe = require('fast-safe-stringify')
 var streamBuffers = require('stream-buffers')
-
+var request = null
 // settings for node stream buffer
 var initialBufferSize = 1024 * 1024
 var incrementBuffer = 1024 * 1024
@@ -27,24 +28,24 @@ var hasDots = /\./g
 // the container hostname might not be helpful ...
 // this might be removed after next release of SDA setting xLogseneOrigin from SDA
 var xLogseneOrigin = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
-// limit message size 
-var MAX_MESSAGE_FIELD_SIZE = Number(process.env.LOGSENE_MAX_MESSAGE_FIELD_SIZE) || 1024 * 240 // 240 K, leave 
+// limit message size
+var MAX_MESSAGE_FIELD_SIZE = Number(process.env.LOGSENE_MAX_MESSAGE_FIELD_SIZE) || 1024 * 240 // 240 K, leave
 // settings for bulk requests
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
 var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
-var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 10
+var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 1
 
 // upper limit a user could set
 var MAX_LOGSENE_BULK_SIZE_BYTES = 20 * 1024 * 1024
 // lower limit a user could set
 var MIN_LOGSENE_BULK_SIZE_BYTES = 1024 * 1024
-var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) ||  1024 * 1024 // max 5 MB per http request   
+var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) || 1024 * 1024 * 3 // max 3 MB per http request   
 // check limits set by users, and adjust if those would lead to problematic settings 
 if (MAX_LOGSENE_BUFFER_SIZE > MAX_LOGSENE_BULK_SIZE_BYTES) {
   MAX_LOGSENE_BUFFER_SIZE = MAX_LOGSENE_BULK_SIZE_BYTES
 }
-if (MAX_LOGSENE_BUFFER_SIZE<MIN_LOGSENE_BULK_SIZE_BYTES) {
+if (MAX_LOGSENE_BUFFER_SIZE < MIN_LOGSENE_BULK_SIZE_BYTES) {
   MAX_LOGSENE_BUFFER_SIZE = MIN_LOGSENE_BULK_SIZE_BYTES
 }
 var LOGSENE_BULK_SIZE = Number(process.env.LOGSENE_BULK_SIZE) || 1000 // max 1000 messages per bulk req.
@@ -82,15 +83,16 @@ function Logsene (token, type, url, storageDirectory) {
   }
   events.EventEmitter.call(this)
   var self = this
+  var logInterval = process.env.LOGSENE_LOG_INTERVAL || 10000
   var tid = setInterval(function () {
-    if (self.logCount > 0) {
+    if (self.logCount > 0 && Date.now() - self.lastSend > logInterval) {
       self.send()
     }
-  }, process.env.LOGSENE_LOG_INTERVAL || 10000)
+  }, logInterval)
   if (tid.unref) {
     tid.unref()
   }
-  process.on('exit', function () {
+  process.on('beforeExit', function () {
     self.send()
   })
   if (process.env.LOGSENE_TMP_DIR || storageDirectory) {
@@ -101,7 +103,7 @@ util.inherits(Logsene, events.EventEmitter)
 
 Logsene.prototype.setUrl = function (url) {
   var tmpUrl = url
-  if (url.indexOf ('_bulk') === -1) {
+  if (url.indexOf('_bulk') === -1) {
     tmpUrl = url + '/_bulk'
   } else {
     tmpUrl = url
@@ -113,7 +115,11 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS})
+  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS})
+  request = Requester.defaults({
+    agent: this.httpAgent,
+    timeout: 30000
+  })
 }
 var DiskBuffer = require('./DiskBuffer.js')
 
@@ -131,15 +137,15 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
       // only the first instance registers for retransmit-req
       // to avoid double event handling from multiple instances
       this.db.on('retransmit-req', function (event) {
-      self.shipFile(event.fileName, event.buffer, function (err, res) {
-        if (!err && res) { 
-          self.db.rmFile.call(self.db, event.fileName)
-          self.db.retransmitNext.call(self.db)
-        } else {
-          self.db.unlock.call(self.db, event.fileName)
-        }
+        self.shipFile(event.fileName, event.buffer, function (err, res) {
+          if (!err && res) {
+            self.db.rmFile.call(self.db, event.fileName)
+            self.db.retransmitNext.call(self.db)
+          } else {
+            self.db.unlock.call(self.db, event.fileName)
+          }
         })
-      })  
+      })
     }
   }
   this.persistence = enabled
@@ -154,7 +160,7 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
  */
 Logsene.prototype.log = function (level, message, fields, callback) {
   var type = fields ? fields._type : this.type
-  var elasticsearchDocId = null   
+  var elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
   }
@@ -176,18 +182,18 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (msg.message && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
     var cutMsg = new Buffer(this.maxMessageFieldSize)
     cutMsg.write(msg.message)
-    msg.message = cutMsg.toString() 
+    msg.message = cutMsg.toString()
     if (msg.originalLine) {
-      // when messge is too large and logagent added originalLine, 
+      // when message is too large and logagent added originalLine, 
       // this should be removed to stay under the limits in receiver
       delete msg.originalLine
     }
-    msg.logsene_client_warning='Warning: message field too large > ' + this.maxMessageFieldSize  +' bytes'
-  } 
+    msg.logsene_client_warning = 'Warning: message field too large > ' + this.maxMessageFieldSize + ' bytes'
+  }
   if (elasticsearchDocId !== null) {
-    this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n') 
+    this.bulkReq.write(stringifySafe({'index': {'_index': this.token, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n')
   } else {
-    this.bulkReq.write(JSON.stringify({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')  
+    this.bulkReq.write(stringifySafe({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   }
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
@@ -207,6 +213,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
+  self.lastSend = Date.now()
   var count = this.logCount
   this.logCount = 0
   var options = {
@@ -219,7 +226,6 @@ Logsene.prototype.send = function (callback) {
       'x-logsene-origin': this.xLogseneOrigin || xLogseneOrigin
     },
     body: this.bulkReq.getContents(),
-    agent: self.httpAgent,
     method: 'POST'
   }
   this.bulkReq = null
@@ -230,33 +236,35 @@ Logsene.prototype.send = function (callback) {
   if (options.body === false) {
     return
   }
-  var req = request.post(options, function (err, res) {
+  var req = null
+  function httpResult (err, res) {
+    // if (res && res.body) console.log(res.statusCode, res.body)
     if (err || (res && res.statusCode > 399)) {
       self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
-        options.agent = false
-        options.body=options.body.toString()
+        req.destroy()
+        options.body = options.body.toString()
         self.db.store(options, function () {
           delete options.body
         })
         return
       }
-      req.destroy()
     } else {
       self.emit('log', {source: 'logsene', count: count})
+      delete options.body
+      req.destroy()
       if (callback) {
         callback(null, res)
       }
-      delete options.body
-      req.destroy()
     }
-  })
+  }
+  req = request.post(options, httpResult)
 }
 
 Logsene.prototype.shipFile = function (name, data, cb) {
   var self = this
-  var options = null 
-  try { 
+  var options = null
+  try {
     options = JSON.parse(data)
   } catch (err) {
     // wrong file format
@@ -269,7 +277,6 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   }
   options.body = options.body.toString()
   options.url = self.url
-  options.agent = self.httpAgent
   var req = request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
       var errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
