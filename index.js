@@ -83,9 +83,10 @@ function Logsene (token, type, url, storageDirectory) {
   }
   events.EventEmitter.call(this)
   var self = this
+  self.lastSend = Date.now()
   var logInterval = process.env.LOGSENE_LOG_INTERVAL || 10000
   var tid = setInterval(function () {
-    if (self.logCount > 0 && Date.now() - self.lastSend > logInterval) {
+    if (self.logCount > 0 && (Date.now() - self.lastSend) > logInterval) {
       self.send()
     }
   }, logInterval)
