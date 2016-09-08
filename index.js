@@ -199,7 +199,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
-    this.bulkReq.end()
+    
     this.send()
   }
   this.emit('logged', {msg: msg})
@@ -214,6 +214,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
+  self.bulkReq.end() 
   self.lastSend = Date.now()
   var count = this.logCount
   this.logCount = 0
