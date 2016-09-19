@@ -1,7 +1,7 @@
 /*
  * @copyright Copyright (c) Sematext Group, Inc. - All Rights Reserved
  *
- * @licence SPM for NodeJS is free-to-use, proprietary software.
+ * @licence logsene-js is free-to-use, proprietary software.
  * THIS IS PROPRIETARY SOURCE CODE OF Sematext Group, Inc. (Sematext)
  * This source code may not be copied, reverse engineered, or altered for any purpose.
  * This source code is to be used exclusively by users and customers of Sematext.
@@ -13,7 +13,6 @@ var util = require('util')
 var os = require('os')
 var events = require('events')
 var ipAddress = require('ip').address()
-var util = require('util')
 var path = require('path')
 var stringifySafe = require('fast-safe-stringify')
 var streamBuffers = require('stream-buffers')
@@ -34,14 +33,14 @@ var MAX_MESSAGE_FIELD_SIZE = Number(process.env.LOGSENE_MAX_MESSAGE_FIELD_SIZE) 
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
 var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
-var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 1
+var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 2
 
 // upper limit a user could set
 var MAX_LOGSENE_BULK_SIZE_BYTES = 20 * 1024 * 1024
 // lower limit a user could set
 var MIN_LOGSENE_BULK_SIZE_BYTES = 1024 * 1024
-var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) || 1024 * 1024 * 3 // max 3 MB per http request   
-// check limits set by users, and adjust if those would lead to problematic settings 
+var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) || 1024 * 1024 * 3 // max 3 MB per http request
+// check limits set by users, and adjust if those would lead to problematic settings
 if (MAX_LOGSENE_BUFFER_SIZE > MAX_LOGSENE_BULK_SIZE_BYTES) {
   MAX_LOGSENE_BUFFER_SIZE = MAX_LOGSENE_BULK_SIZE_BYTES
 }
@@ -86,7 +85,7 @@ function Logsene (token, type, url, storageDirectory) {
   self.lastSend = Date.now()
   var logInterval = Number(process.env.LOGSENE_LOG_INTERVAL) || 20000
   var tid = setInterval(function () {
-    if (self.logCount > 0 && (Date.now() - self.lastSend) > (logInterval-1000)) {
+    if (self.logCount > 0 && (Date.now() - self.lastSend) > (logInterval - 1000)) {
       self.send()
     }
   }, logInterval)
@@ -119,7 +118,7 @@ Logsene.prototype.setUrl = function (url) {
   this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS})
   request = Requester.defaults({
     agent: this.httpAgent,
-    timeout: 30000
+    timeout: 60000
   })
 }
 var DiskBuffer = require('./DiskBuffer.js')
@@ -185,7 +184,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     cutMsg.write(msg.message)
     msg.message = cutMsg.toString()
     if (msg.originalLine) {
-      // when message is too large and logagent added originalLine, 
+      // when message is too large and logagent added originalLine,
       // this should be removed to stay under the limits in receiver
       delete msg.originalLine
     }
@@ -199,7 +198,6 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.bulkReq.write(stringifySafe(msg) + '\n')
   this.logCount++
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
-    
     this.send()
   }
   this.emit('logged', {msg: msg})
@@ -214,7 +212,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
-  self.bulkReq.end() 
+  self.bulkReq.end()
   self.lastSend = Date.now()
   var count = this.logCount
   this.logCount = 0
