@@ -159,6 +159,7 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
  * @param callback (err, msg object)
  */
 Logsene.prototype.log = function (level, message, fields, callback) {
+  this.logCount = this.logCount + 1
   var type = fields ? fields._type : this.type
   var elasticsearchDocId = null
   if (fields && fields._type) {
@@ -196,7 +197,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     this.bulkReq.write(stringifySafe({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
   }
   this.bulkReq.write(stringifySafe(msg) + '\n')
-  this.logCount++
+
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
     this.send()
   }
@@ -215,7 +216,6 @@ Logsene.prototype.send = function (callback) {
   self.bulkReq.end()
   self.lastSend = Date.now()
   var count = this.logCount
-  this.logCount = 0
   var options = {
     url: this.url,
     logCount: count,
@@ -238,6 +238,7 @@ Logsene.prototype.send = function (callback) {
   }
   var req = null
   function httpResult (err, res) {
+    self.logCount = Math.max(self.logCount - count, 0)
     // if (res && res.body) console.log(res.statusCode, res.body)
     if (err || (res && res.statusCode > 399)) {
       self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
@@ -257,6 +258,7 @@ Logsene.prototype.send = function (callback) {
         callback(null, res)
       }
     }
+
   }
   req = request.post(options, httpResult)
 }
