@@ -213,7 +213,12 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  */
 Logsene.prototype.send = function (callback) {
   var self = this
-  self.bulkReq.end()
+  var buffer = this.bulkReq
+  this.bulkReq = new streamBuffers.WritableStreamBuffer({
+    initialSize: initialBufferSize,
+    incrementAmount: incrementBuffer
+  })
+  buffer.end()
   self.lastSend = Date.now()
   var count = this.logCount
   var options = {
@@ -225,20 +230,15 @@ Logsene.prototype.send = function (callback) {
       'Connection': 'Close',
       'x-logsene-origin': this.xLogseneOrigin || xLogseneOrigin
     },
-    body: this.bulkReq.getContents(),
+    body: buffer.getContents(),
     method: 'POST'
   }
-  this.bulkReq = null
-  this.bulkReq = new streamBuffers.WritableStreamBuffer({
-    initialSize: initialBufferSize,
-    incrementAmount: incrementBuffer
-  })
+
   if (options.body === false) {
     return
   }
   var req = null
   function httpResult (err, res) {
-    self.logCount = Math.max(self.logCount - count, 0)
     // if (res && res.body) console.log(res.statusCode, res.body)
     if (err || (res && res.statusCode > 399)) {
       self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
@@ -258,8 +258,8 @@ Logsene.prototype.send = function (callback) {
         callback(null, res)
       }
     }
-
   }
+  self.logCount = Math.max(self.logCount - count, 0)
   req = request.post(options, httpResult)
 }
 
