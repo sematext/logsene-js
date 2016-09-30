@@ -69,7 +69,7 @@ function Logsene (token, type, url, storageDirectory) {
   this.token = token
   this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.type = type || 'logs'
-  this.hostname = os.hostname()
+  this.hostname = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
   this.bulkReq = new streamBuffers.WritableStreamBuffer({
     initialSize: initialBufferSize,
     incrementAmount: incrementBuffer
