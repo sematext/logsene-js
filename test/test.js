@@ -66,7 +66,6 @@ describe('Logsene Load Test ', function () {
 
       logsene.on('log', evtH)
       logsene.once('error', function (event) {
-        console.log(event)
         done(event)
       })
       for (var i = 0; i < logCount; i++) {
