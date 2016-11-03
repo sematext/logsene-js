@@ -16,7 +16,7 @@ var ipAddress = require('ip').address()
 var path = require('path')
 var stringifySafe = require('fast-safe-stringify')
 var streamBuffers = require('stream-buffers')
-var request = null
+
 // settings for node stream buffer
 var initialBufferSize = 1024 * 1024
 var incrementBuffer = 1024 * 1024
@@ -64,6 +64,7 @@ function Logsene (token, type, url, storageDirectory) {
   if (!token) {
     throw new Error('Logsene token not specified')
   }
+  this.request = null
   this.maxMessageFieldSize = MAX_MESSAGE_FIELD_SIZE
   this.xLogseneOrigin = xLogseneOrigin
   this.token = token
@@ -116,7 +117,7 @@ Logsene.prototype.setUrl = function (url) {
     Agent = require('http').Agent
   }
   this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS})
-  request = Requester.defaults({
+  this.request = Requester.defaults({
     agent: this.httpAgent,
     timeout: 60000
   })
@@ -260,7 +261,7 @@ Logsene.prototype.send = function (callback) {
     }
   }
   self.logCount = Math.max(self.logCount - count, 0)
-  req = request.post(options, httpResult)
+  req = self.request.post(options, httpResult)
 }
 
 Logsene.prototype.shipFile = function (name, data, cb) {
@@ -279,7 +280,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   }
   options.body = options.body.toString()
   options.url = self.url
-  var req = request.post(options, function (err, res) {
+  var req = self.request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
       var errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
       self.emit('error', errObj)
