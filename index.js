@@ -68,8 +68,12 @@ function Logsene (token, type, url, storageDirectory, options) {
     this.options = options
   } else {
     this.options = {
-      useIndexInBulkUrl: true
+      useIndexInBulkUrl: false
     }
+  }
+  if (url && /logsene/.test(url)) {
+    // logs to logsene should use /TOKEN/_bulk
+    this.options.useIndexInBulkUrl = true
   }
   this.request = null
   this.maxMessageFieldSize = MAX_MESSAGE_FIELD_SIZE
