@@ -60,9 +60,16 @@ if (LOGSENE_BULK_SIZE < MIN_LOGSENE_BULK_SIZE) {
  * type - type of log (string)
  * url - optional alternative URL for Logsene receiver (e.g. for on premises version)
  */
-function Logsene (token, type, url, storageDirectory) {
+function Logsene (token, type, url, storageDirectory, options) {
   if (!token) {
     throw new Error('Logsene token not specified')
+  }
+  if (options) {
+    this.options = options
+  } else {
+    this.options = {
+      useIndexInBulkUrl: true
+    }
   }
   this.request = null
   this.maxMessageFieldSize = MAX_MESSAGE_FIELD_SIZE
@@ -109,7 +116,11 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     tmpUrl = url
   }
-  this.url = tmpUrl.replace('_bulk', this.token + '/_bulk')
+  if (this.options && this.options.useIndexInBulkUrl) {
+    this.url = tmpUrl.replace('_bulk', this.token + '/_bulk')
+  } else {
+    this.url = tmpUrl
+  }
   var Agent = null
   if (/^https/.test(url)) {
     Agent = require('https').Agent
@@ -242,9 +253,14 @@ Logsene.prototype.send = function (callback) {
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
     if (err || (res && res.statusCode > 399)) {
-      self.emit('error', {source: 'logsene', err: (err || {message: 'Logsene status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
+      if (err && (err.code || err.message)) {
+        err.url = options.url
+      }
+      self.emit('error', {source: 'logsene-js', err: (err || {message: 'HTTP status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
-        req.destroy()
+        if (req) {
+          req.destroy()
+        }
         options.body = options.body.toString()
         self.db.store(options, function () {
           delete options.body
@@ -252,9 +268,11 @@ Logsene.prototype.send = function (callback) {
         return
       }
     } else {
-      self.emit('log', {source: 'logsene', count: count})
+      self.emit('log', {source: 'logsene-js', count: count, url: options.url})
       delete options.body
-      req.destroy()
+      if (req) {
+        req.destroy()
+      }
       if (callback) {
         callback(null, res)
       }
