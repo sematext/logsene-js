@@ -128,7 +128,30 @@ describe('Logsene constructor', function () {
     })
 })
 
+describe('Accept dynamic index name function', function () {
+  it('generates index name per document', function (done) {
+      try {
+        var token = 'YOUR_TEST_TOKEN'
+        var l = new Logsene(token, 'test', 'http://localhost:9200')
+        l.once('logged', function (event) {
+          if (event._index === 'docSpecificIndexName') {
+            done()
+          } else {
+            done(new Error('_index function not executed'))
+          }
+        })
+        l.log('info', 'test _index function', {
+          docSpecificIndexName: 'docSpecificIndexName',
+          _index: function (msg) {
+            return msg.docSpecificIndexName
+          }
+        })
 
+      } catch (err) {
+        // nothing to do here
+      }
+    })
+})
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
     this.timeout(120000)

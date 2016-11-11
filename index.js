@@ -184,6 +184,11 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
 Logsene.prototype.log = function (level, message, fields, callback) {
   this.logCount = this.logCount + 1
   var type = fields ? fields._type : this.type
+  var _index = this.token
+  if (fields && typeof (fields._index) === 'function') {
+    _index = fields._index(fields)
+    delete fields._index
+  }
   var elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
@@ -214,17 +219,18 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     }
     msg.logsene_client_warning = 'Warning: message field too large > ' + this.maxMessageFieldSize + ' bytes'
   }
+
   if (elasticsearchDocId !== null) {
-    this.bulkReq.write(stringifySafe({'index': {'_index': this.token, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n')
+    this.bulkReq.write(stringifySafe({'index': {'_index': _index, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n')
   } else {
-    this.bulkReq.write(stringifySafe({'index': {'_index': this.token, '_type': type || this.type}}) + '\n')
+    this.bulkReq.write(stringifySafe({'index': {'_index': _index, '_type': type || this.type}}) + '\n')
   }
   this.bulkReq.write(stringifySafe(msg) + '\n')
 
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
     this.send()
   }
-  this.emit('logged', {msg: msg})
+  this.emit('logged', {msg: msg, _index: _index})
   if (callback) {
     callback(null, msg)
   }
