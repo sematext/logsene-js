@@ -36,7 +36,13 @@ describe('Logsene Load Test ', function () {
       var memory = process.memoryUsage().heapUsed
       var counter = 0
 
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {useIndexInBulkUrl: false})
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {
+          useIndexInBulkUrl: false,
+          httpOptions: {
+            keepAlive: true,
+            localAddress: '127.0.0.1'
+          }
+        })
       var start = new Date().getTime()
       var doneCalled = false
       console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')

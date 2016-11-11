@@ -19,6 +19,9 @@ Register for a [free account](https://apps.sematext.com/users-web/register.do) o
 - __token__ - Create your free account and access token [here](https://apps.sematext.com/users-web/register.do).
 - __type__ - Optional. Default type of your logs - please note you can define [Elasticsearch mapping templates in Logsene](http://blog.sematext.com/2015/02/09/elasticsearch-mapping-types-for-json-logging/)
 - __url__ - Logsene receiver URL (e.g. for Logsene On Premises), defaults to ```'https://logsene-receiver.sematext.com/_bulk'```
+- __options__: 
+  - __useIndexInBulkUrl__ -  If set to 'false' /_bulk will be used /indexName/_bulk otherwise.
+  - __httpOptions__ - general HTTP/HTTPS options for the [request](https://nodejs.org/api/https.html#https_https_request_options_callback), e.g. SSL key,cert,passphrase,ca,rejectUNauthorized etc. 
 
 ## Special fields for indexing
 

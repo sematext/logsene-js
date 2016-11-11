@@ -126,12 +126,19 @@ Logsene.prototype.setUrl = function (url) {
     this.url = tmpUrl
   }
   var Agent = null
+  var httpOptions = {maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS}
+  if (this.options.httpOptions) {
+    var keys = Object.keys(this.options.httpOptions)
+    for (var i = 0; i < keys.length; i++) {
+      httpOptions[keys[i]] = this.options.httpOptions[keys[i]]
+    }
+  }
   if (/^https/.test(url)) {
     Agent = require('https').Agent
   } else {
     Agent = require('http').Agent
   }
-  this.httpAgent = new Agent({maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS})
+  this.httpAgent = new Agent(httpOptions)
   this.request = Requester.defaults({
     agent: this.httpAgent,
     timeout: 60000
