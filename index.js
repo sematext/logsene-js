@@ -184,11 +184,7 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
 Logsene.prototype.log = function (level, message, fields, callback) {
   this.logCount = this.logCount + 1
   var type = fields ? fields._type : this.type
-  var _index = this.token
-  if (fields && typeof (fields._index) === 'function') {
-    _index = fields._index(fields)
-    delete fields._index
-  }
+
   var elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
@@ -202,11 +198,17 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
       msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
     } else {
-      msg[x] = fields[x]
+      if (! (typeof fields[x] === 'function')) {
+        msg[x] = fields[x]
+      }
     }
   }
   if (typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
+  }
+  var _index = this.token
+  if (fields && typeof (fields._index) === 'function') {
+    _index = fields._index(msg)
   }
   if (msg.message && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
     var cutMsg = new Buffer(this.maxMessageFieldSize)
