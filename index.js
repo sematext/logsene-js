@@ -280,10 +280,17 @@ Logsene.prototype.send = function (callback) {
         if (req) {
           req.destroy()
         }
-        options.body = options.body.toString()
-        self.db.store(options, function () {
-          delete options.body
-        })
+        var storeFileFlag = true
+        // don't use disk buffer for invalid Logsene tokens
+        if (res && res.body && /bad token/i.test(res.body)) {
+          storeFileFlag = false
+        }
+        if (storeFileFlag) {
+          options.body = options.body.toString()
+          self.db.store(options, function () {
+            delete options.body
+          })
+        }
         return
       }
     } else {
