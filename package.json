@@ -26,7 +26,7 @@
     "ELK"
   ],
   "author": "Stefan Thies",
-  "license": "Apache",
+  "license": "Apache 2.0",
   "bugs": {
     "url": "https://github.com/sematext/logsene-js/issues"
   },
