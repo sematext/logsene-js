@@ -1,11 +1,19 @@
 /*
- * @copyright Copyright (c) Sematext Group, Inc. - All Rights Reserved
+ * See the NOTICE.txt file distributed with this work for additional information
+ * regarding copyright ownership.
+ * Sematext licenses logsene-js to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * @licence logsene-js is free-to-use, proprietary software.
- * THIS IS PROPRIETARY SOURCE CODE OF Sematext Group, Inc. (Sematext)
- * This source code may not be copied, reverse engineered, or altered for any purpose.
- * This source code is to be used exclusively by users and customers of Sematext.
- * Please see the full license (found in LICENSE in this distribution) for details on its license and the licenses of its dependencies.
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 'user strict'
 var Requester = require('request')
