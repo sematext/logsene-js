@@ -206,7 +206,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
       msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
     } else {
-      if (! (typeof fields[x] === 'function')) {
+      if (!(typeof fields[x] === 'function')) {
         msg[x] = fields[x]
       }
     }
@@ -279,7 +279,7 @@ Logsene.prototype.send = function (callback) {
   var req = null
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
-    if (err || (res && res.statusCode > 399)) {
+    if (err || (res && res.statusCode > 399) || (res && res.body && /"errors"\:\s{0,2}true/.test(res.body.substring(0, 64)))) {
       if (err && (err.code || err.message)) {
         err.url = options.url
       }
@@ -299,7 +299,6 @@ Logsene.prototype.send = function (callback) {
             delete options.body
           })
         }
-        return
       }
     } else {
       self.emit('log', {source: 'logsene-js', count: count, url: options.url})

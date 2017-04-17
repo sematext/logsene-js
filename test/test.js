@@ -13,13 +13,19 @@ console.log('Token: ' + process.env.LOGSENE_TOKEN)
 var http = require('http')
 var httpStatusToReturn = 200
 http.createServer(function (req, res) {
-  res.writeHead(httpStatusToReturn, {'Content-Type': 'text/plain'})
-  //req.on('data', function (data) {
-    // console.log(data.toString().substring(0,10))
-  //})
   var body = JSON.stringify({error: 'bad request', status: 400})
-  if (httpStatusToReturn === 200)
+  if (httpStatusToReturn === 200) {
     body = 'OK'
+  }
+  var status = httpStatusToReturn
+  if (httpStatusToReturn == 1) {
+    status = 200
+    body = '{"took":1,"errors":true,"items":[]}'
+  }
+  res.writeHead(status, {'Content-Type': 'text/plain'})
+  // req.on('data', function (data) {
+  //   console.log(data.toString().substring(0,10))
+  // })
   res.end(body)
   // res.destroy()
 }).listen(19200, '127.0.0.1')
@@ -37,12 +43,12 @@ describe('Logsene Load Test ', function () {
       var counter = 0
 
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {
-          useIndexInBulkUrl: false,
-          httpOptions: {
-            keepAlive: true,
-            localAddress: '127.0.0.1'
-          }
-        })
+        useIndexInBulkUrl: false,
+        httpOptions: {
+          keepAlive: true,
+          localAddress: '127.0.0.1'
+        }
+      })
       var start = new Date().getTime()
       var doneCalled = false
       console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
@@ -97,60 +103,59 @@ describe('Logsene constructor', function () {
     done()
   })
   it('should have "/token/_bulk" in url', function (done) {
-      try {
-        var token = 'YOUR_TEST_TOKEN'
-        var re = new RegExp('\/' + token + '\/' + '_bulk')
-        var l = new Logsene(token, 'test', 'https://logsene-receiver')
-        if (l.url.indexOf (token) > -1 && re.test(l.url)) {
-          done()
-          console.log('\tURL: ' + l.url)
-        } else {
-          done(new Error('URL does not contain token: ' + l.url))
-        }
-      } catch (err) {
-        // nothing to do here
+    try {
+      var token = 'YOUR_TEST_TOKEN'
+      var re = new RegExp('\/' + token + '\/' + '_bulk')
+      var l = new Logsene(token, 'test', 'https://logsene-receiver')
+      if (l.url.indexOf(token) > -1 && re.test(l.url)) {
+        done()
+        console.log('\tURL: ' + l.url)
+      } else {
+        done(new Error('URL does not contain token: ' + l.url))
       }
-    })
+    } catch (err) {
+        // nothing to do here
+    }
+  })
   it('should have "/_bulk" in url, when only host:port is specified', function (done) {
-      try {
-        var token = 'YOUR_TEST_TOKEN'
-        var re = /_bulk/
-        var l = new Logsene(token, 'test', 'http://localhost:9200')
-        if (re.test(l.url)) {
-          done()
-          console.log('\tURL: ' + l.url)
-        } else {
-          done(new Error('URL does not contain _bulk: ' + l.url))  
-        }
-      } catch (err) {
-        // nothing to do here
+    try {
+      var token = 'YOUR_TEST_TOKEN'
+      var re = /_bulk/
+      var l = new Logsene(token, 'test', 'http://localhost:9200')
+      if (re.test(l.url)) {
+        done()
+        console.log('\tURL: ' + l.url)
+      } else {
+        done(new Error('URL does not contain _bulk: ' + l.url))
       }
-    })
+    } catch (err) {
+        // nothing to do here
+    }
+  })
 })
 
 describe('Accept dynamic index name function', function () {
   it('generates index name per document', function (done) {
-      try {
-        var token = 'YOUR_TEST_TOKEN'
-        var l = new Logsene(token, 'test', 'http://localhost:9200')
-        l.once('logged', function (event) {
-          if (event._index === 'docSpecificIndexName') {
-            done()
-          } else {
-            done(new Error('_index function not executed'))
-          }
-        })
-        l.log('info', 'test _index function', {
-          docSpecificIndexName: 'docSpecificIndexName',
-          _index: function (msg) {
-            return msg.docSpecificIndexName
-          }
-        })
-
-      } catch (err) {
+    try {
+      var token = 'YOUR_TEST_TOKEN'
+      var l = new Logsene(token, 'test', 'http://localhost:9200')
+      l.once('logged', function (event) {
+        if (event._index === 'docSpecificIndexName') {
+          done()
+        } else {
+          done(new Error('_index function not executed'))
+        }
+      })
+      l.log('info', 'test _index function', {
+        docSpecificIndexName: 'docSpecificIndexName',
+        _index: function (msg) {
+          return msg.docSpecificIndexName
+        }
+      })
+    } catch (err) {
         // nothing to do here
-      }
-    })
+    }
+  })
 })
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
@@ -171,7 +176,7 @@ describe('Logsene DiskBuffer ', function () {
       done()
     })
     setTimeout(function () {
-      db.store({message: 'hello'}, function (e,d) {
+      db.store({message: 'hello'}, function (e, d) {
         db.retransmitNext.call(db)
       })
     }, 1000)
@@ -228,9 +233,9 @@ describe('Logsene log ', function () {
   })
   it('should limit message field size, and remove originalLine when too large', function (done) {
     var logsene = new Logsene(token, 'test')
-    //logsene.MAX_MESSAGE_FIELD_SIZE=5
+    // logsene.MAX_MESSAGE_FIELD_SIZE=5
     logsene.on('error', console.log)
-    var longMessage = new Buffer(logsene.maxMessageFieldSize*2)
+    var longMessage = new Buffer(logsene.maxMessageFieldSize * 2)
     longMessage = longMessage.fill('1').toString()
     try {
       logsene.log('info', longMessage, {originalLine: longMessage}, function (err, msg) {
@@ -326,10 +331,10 @@ describe('Logsene log ', function () {
     try {
       httpStatusToReturn = 501
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
-      //logsene.once('log', function (event) {
-        // this should not happen in this test case 
-        //done(event)
-      //})
+      // logsene.once('log', function (event) {
+        // this should not happen in this test case
+        // done(event)
+      // })
 
       logsene.once('error', function (event) {
         // this is the error event we expect
@@ -341,6 +346,28 @@ describe('Logsene log ', function () {
           done(new Error('missing message field and status code in error event'))
         }
         console.log('\t' + JSON.stringify(event.err))
+      })
+      logsene.log('info', 'test message')
+      logsene.send()
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('transmit fail when logsene limit is reached', function (done) {
+    this.timeout(20000)
+    try {
+      httpStatusToReturn = 1 // code to generate 200, errors:true response
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      logsene.once('error', function (event) {
+        // this is the error event we expect
+        // reset to 200 for next test ...
+        httpStatusToReturn = 200
+        if (event.err) {
+          // console.log('\t' + JSON.stringify(event.err))
+          done()
+        } else {
+          done(new Error('missing err object in error event'))
+        }
       })
       logsene.log('info', 'test message')
       logsene.send()
@@ -361,17 +388,15 @@ describe('Logsene log ', function () {
         // console.log(hu/1024/1024)
         errorCounter++
         // console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
-        if (errorCounter >= 100000/1000) {
+        if (errorCounter >= 100000 / 1000) {
           errorCounter = 0
-          if (diff < 200)
-            done()
-          else {
+          if (diff < 200) { done() } else {
             console.log()
             done(new Error('too much memory used:' + diff + ' MB' + JSON.stringify(process.memoryUsage())))
           }
         }
       })
-      for (var i=0; i<100000; i++) {
+      for (var i = 0; i < 100000; i++) {
         logsene.log('info', 'test message')
       }
       logsene.send()
