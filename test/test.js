@@ -21,7 +21,7 @@ http.createServer(function (req, res) {
   var headers = {'Content-Type': 'text/plain'}
   if (httpStatusToReturn == 403) {
     status = 403
-    headers['x-logsene-error'] = 'Application limits reached'
+    headers['X-Logsene-Error'] = 'Application limits reached'
     body = '{"took":1,"errors":true,"items":[]}'
   }
   res.writeHead(status, headers)
@@ -358,7 +358,7 @@ describe('Logsene log ', function () {
   it('transmit fail when logsene limit is reached', function (done) {
     this.timeout(20000)
     try {
-      httpStatusToReturn = 403 // code to generate 200, errors:true response
+      httpStatusToReturn = 403 // code to generate "403, Application limit reached"
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       logsene.once('error', function (event) {
         // this is the error event we expect
