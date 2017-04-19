@@ -30,6 +30,7 @@ var initialBufferSize = 1024 * 1024
 var incrementBuffer = 1024 * 1024
 // re-usable regular expressions
 var startsWithUnderscore = /^_/
+var limitRegex = /limit/i
 var hasDots = /\./g
 // SPM_REPORTED_HOSTNAME might be set by Sematext Docker Agent
 // the container hostname might not be helpful ...
@@ -279,11 +280,23 @@ Logsene.prototype.send = function (callback) {
   var req = null
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
-    if (err || (res && res.statusCode > 399) || (res && res.body && /"errors"\:\s{0,2}true/.test(res.body.substring(0, 64)))) {
+    var logseneError = null
+    if (res && res.headers && res.headers['x-logsene-error']) {
+      logseneError = res.headers['x-logsene-error']
+    }
+    var errorMessage = null
+    if (err || (res && res.statusCode > 399) || logseneError) {
       if (err && (err.code || err.message)) {
         err.url = options.url
       }
-      self.emit('error', {source: 'logsene-js', err: (err || {message: 'HTTP status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
+      if (res && res.statusCode) {
+       errorMessage = 'HTTP status code:' + res.statusCode
+      }
+
+      if (logseneError) {
+        errorMessage += ', ' + logseneError
+      }
+      self.emit('error', {source: 'logsene-js', err: (err || {message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
       if (self.persistence) {
         if (req) {
           req.destroy()
@@ -291,6 +304,9 @@ Logsene.prototype.send = function (callback) {
         var storeFileFlag = true
         // don't use disk buffer for invalid Logsene tokens
         if (res && res.body && /bad token/i.test(res.body)) {
+          storeFileFlag = false
+        }
+        if (logseneError && limitRegex.test(logseneError) && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false') {
           storeFileFlag = false
         }
         if (storeFileFlag) {

@@ -18,11 +18,13 @@ http.createServer(function (req, res) {
     body = 'OK'
   }
   var status = httpStatusToReturn
-  if (httpStatusToReturn == 1) {
-    status = 200
+  var headers = {'Content-Type': 'text/plain'}
+  if (httpStatusToReturn == 403) {
+    status = 403
+    headers['x-logsene-error'] = 'Application limits reached'
     body = '{"took":1,"errors":true,"items":[]}'
   }
-  res.writeHead(status, {'Content-Type': 'text/plain'})
+  res.writeHead(status, headers)
   // req.on('data', function (data) {
   //   console.log(data.toString().substring(0,10))
   // })
@@ -356,14 +358,14 @@ describe('Logsene log ', function () {
   it('transmit fail when logsene limit is reached', function (done) {
     this.timeout(20000)
     try {
-      httpStatusToReturn = 1 // code to generate 200, errors:true response
+      httpStatusToReturn = 403 // code to generate 200, errors:true response
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       logsene.once('error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
         httpStatusToReturn = 200
-        if (event.err) {
-          // console.log('\t' + JSON.stringify(event.err))
+        if (event && event.err) {
+          console.log('\t' + JSON.stringify(event.err))
           done()
         } else {
           done(new Error('missing err object in error event'))
