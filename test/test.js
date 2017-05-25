@@ -19,10 +19,15 @@ http.createServer(function (req, res) {
   }
   var status = httpStatusToReturn
   var headers = {'Content-Type': 'text/plain'}
-  if (httpStatusToReturn == 403) {
+  if (httpStatusToReturn === 403) {
     status = 403
     headers['X-Logsene-Error'] = 'Application limits reached'
     body = '{"took":1,"errors":true,"items":[]}'
+  }
+  if (httpStatusToReturn === 400) {
+    status = 400
+    // headers['X-Logsene-Error'] = 'Application not found for token'
+    body = '{"error":"Application not found for token \'test\', \'Expected token length of 36, but got 4\'","errorId":"2828454033565","status":"400"}'
   }
   res.writeHead(status, headers)
   // req.on('data', function (data) {
@@ -360,6 +365,28 @@ describe('Logsene log ', function () {
     try {
       httpStatusToReturn = 403 // code to generate "403, Application limit reached"
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      logsene.once('error', function (event) {
+        // this is the error event we expect
+        // reset to 200 for next test ...
+        httpStatusToReturn = 200
+        if (event && event.err) {
+          console.log('\t' + JSON.stringify(event.err))
+          done()
+        } else {
+          done(new Error('missing err object in error event'))
+        }
+      })
+      logsene.log('info', 'test message')
+      logsene.send()
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('transmit fail when app token is unknown', function (done) {
+    this.timeout(20000)
+    try {
+      httpStatusToReturn = 400 // code to generate "400, Application not found"
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
       logsene.once('error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...

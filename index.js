@@ -32,6 +32,8 @@ var incrementBuffer = 1024 * 1024
 var startsWithUnderscore = /^_/
 var limitRegex = /limit/i
 var hasDots = /\./g
+var appNotFoundRegEx = /Application not found for token/i
+
 // SPM_REPORTED_HOSTNAME might be set by Sematext Docker Agent
 // the container hostname might not be helpful ...
 // this might be removed after next release of SDA setting xLogseneOrigin from SDA
@@ -290,20 +292,22 @@ Logsene.prototype.send = function (callback) {
         err.url = options.url
       }
       if (res && res.statusCode) {
-       errorMessage = 'HTTP status code:' + res.statusCode
+        errorMessage = 'HTTP status code:' + res.statusCode
       }
 
       if (logseneError) {
         errorMessage += ', ' + logseneError
       }
       self.emit('error', {source: 'logsene-js', err: (err || {message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
+
       if (self.persistence) {
         if (req) {
           req.destroy()
         }
         var storeFileFlag = true
         // don't use disk buffer for invalid Logsene tokens
-        if (res && res.body && /bad token/i.test(res.body)) {
+
+        if (res && res.body && appNotFoundRegEx.test(res.body)) {
           storeFileFlag = false
         }
         if (logseneError && limitRegex.test(logseneError) && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false') {
