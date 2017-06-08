@@ -404,6 +404,24 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
+  it('app token is unknown, no diskBuffer is used', function (done) {
+    this.timeout(20000)
+    try {
+      httpStatusToReturn = 400 // code to generate "400, Application not found"
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
+      logsene.once('error', function () {})
+      logsene.once('fileNotStored', function (event) {
+        // this is the error event we expect
+        // reset to 200 for next test ...
+        httpStatusToReturn = 200
+        done()
+      })
+      logsene.log('info', 'test message')
+      logsene.send()
+    } catch (err) {
+      done(err)
+    }
+  })
   it('transmit fail keeps flat memory footprint', function (done) {
     this.timeout(30000)
     try {

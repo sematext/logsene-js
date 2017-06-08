@@ -299,7 +299,6 @@ Logsene.prototype.send = function (callback) {
         errorMessage += ', ' + logseneError
       }
       self.emit('error', {source: 'logsene-js', err: (err || {message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
-
       if (self.persistence) {
         if (req) {
           req.destroy()
@@ -318,6 +317,8 @@ Logsene.prototype.send = function (callback) {
           self.db.store(options, function () {
             delete options.body
           })
+        } else {
+          self.emit('fileNotStored', options)
         }
       }
     } else {
