@@ -17,6 +17,7 @@
  */
 'user strict'
 var Requester = require('request')
+var fs = require('fs')
 var util = require('util')
 var os = require('os')
 var events = require('events')
@@ -33,6 +34,44 @@ var startsWithUnderscore = /^_/
 var limitRegex = /limit/i
 var hasDots = /\./g
 var appNotFoundRegEx = /Application not found for token/i
+
+// load ENV like Logsene receivers from file containing
+// env vars e.g. SPM_RECEIVER_URL, EVENTS_RECEIVER_URL, LOGSENE_RECEIVER_URL
+// the file overwrites the actual environment
+// and is used by Sematext Enterprise or multi-region setups to
+// setup receiver URLs
+function loadEnvFromFile (fileName) {
+  try {
+    var receivers = fs.readFileSync(fileName).toString()
+    if (receivers) {
+      var lines = receivers.split('\n')
+    }
+    if (/logsene-js/.test(process.env.DEBUG)) {
+      console.log(new Date(), 'loading Sematext receiver URLs from ' + fileName)
+    }
+    lines.forEach(function (line) {
+      var kv = line.split('=')
+      if (kv.length === 2 && kv[1].length > 0) {
+        process.env[kv[0].trim()] = kv[1].trim()
+        if (/logsene-js/.test(process.env.DEBUG)) {
+          console.log(kv[0].trim() + ' = ' + kv[1].trim())
+        }
+      }
+    })
+  } catch (error) {
+    // ignore missing file or wrong format
+    if (/logsene-js/.test(process.env.DEBUG)) {
+      console.error(error.message)
+    }
+  }
+}
+var envFileName = '/etc/sematext/receivers.config'
+/**
+  if (/win/.test(os.platform()) {
+    envFileName = process.env.ProgramData + '\\Sematext\\receivers.config'
+  }
+**/
+loadEnvFromFile(envFileName)
 
 // SPM_REPORTED_HOSTNAME might be set by Sematext Docker Agent
 // the container hostname might not be helpful ...
