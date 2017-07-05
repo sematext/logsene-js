@@ -116,10 +116,10 @@ DiskBuffer.prototype.syncFileListFromDir = function () {
 
 DiskBuffer.prototype.cleanUp = function () {
   var self = this
-  log('cleanUp DiskBuffer ' + this.tmpDir)
-  log('stored req: ' + this.storedRequestCount + ', maxStoredReq: ' + this.maxStoredRequests)
   if (this.storedRequestCount > this.maxStoredRequests) {
     if (this.storedFiles.length > this.maxStoredRequests) {
+      log('cleanUp DiskBuffer ' + this.tmpDir)
+      log('stored req: ' + this.storedRequestCount + ', maxStoredReq: ' + this.maxStoredRequests)
       for (var i = 0; this.storedFiles.length >= this.maxStoredRequests; i++) {
         if (i === this.storedFiles.length) {
           break
