@@ -211,6 +211,12 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
       // to avoid double event handling from multiple instances
       this.db.on('retransmit-req', function (event) {
         self.shipFile(event.fileName, event.buffer, function (err, res) {
+          if (err && err.httpBody && appNotFoundRegEx.test(err.httpBody)) {
+            // remove file from DiskBuffer when token is invalid
+            self.db.rmFile.call(self.db, event.fileName)
+            self.db.retransmitNext.call(self.db)
+            return
+          }
           if (!err && res) {
             self.db.rmFile.call(self.db, event.fileName)
             self.db.retransmitNext.call(self.db)
