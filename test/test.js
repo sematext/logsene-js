@@ -26,7 +26,7 @@ http.createServer(function (req, res) {
   }
   if (httpStatusToReturn === 400) {
     status = 400
-    // headers['X-Logsene-Error'] = 'Application not found for token'
+    // headers['x-logsene-error'] = 'Application not found for token'
     body = '{"error":"Application not found for token \'test\', \'Expected token length of 36, but got 4\'","errorId":"2828454033565","status":"400"}'
   }
   res.writeHead(status, headers)
