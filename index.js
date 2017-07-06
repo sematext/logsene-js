@@ -350,11 +350,14 @@ Logsene.prototype.send = function (callback) {
         }
         var storeFileFlag = true
         // don't use disk buffer for invalid Logsene tokens
-
         if (res && res.body && appNotFoundRegEx.test(res.body)) {
           storeFileFlag = false
         }
-        if (logseneError && limitRegex.test(logseneError) && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false') {
+        if (res && res.statusCode && res.statusCode == 400) {
+          storeFileFlag = false
+        }
+        if (logseneError && limitRegex.test(logseneError)) {
+            // && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false'
           storeFileFlag = false
         }
         if (storeFileFlag) {
