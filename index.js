@@ -266,7 +266,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && typeof (fields._index) === 'function') {
     _index = fields._index(msg)
   }
-  if (msg.message && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
+  if (msg.message && typeof msg.message === 'string' && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
     var cutMsg = new Buffer(this.maxMessageFieldSize)
     cutMsg.write(msg.message)
     msg.message = cutMsg.toString()
