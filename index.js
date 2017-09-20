@@ -34,6 +34,7 @@ var startsWithUnderscore = /^_/
 var limitRegex = /limit/i
 var hasDots = /\./g
 var appNotFoundRegEx = /Application not found for token/i
+var disableJsonEnrichment = (process.env.ENABLE_JSON_ENRICHMENT === 'false')
 
 // load ENV like Logsene receivers from file containing
 // env vars e.g. SPM_RECEIVER_URL, EVENTS_RECEIVER_URL, LOGSENE_RECEIVER_URL
@@ -249,6 +250,9 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     elasticsearchDocId = fields._id
   }
   var msg = {'@timestamp': new Date(), message: message, severity: level, host: this.hostname, ip: ipAddress}
+  if (disableJsonEnrichment) {
+    msg = {}
+  }
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
@@ -259,7 +263,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
       }
     }
   }
-  if (typeof msg['@timestamp'] === 'number') {
+  if (msg['@timestamp'] && typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   var _index = this.token
