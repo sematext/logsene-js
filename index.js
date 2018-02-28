@@ -418,7 +418,9 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('file shipped', {file: name, count: options.logCount})
       self.emit('rt', {count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
     }
-    req.destroy()
+    setImmediate(function () {
+      req.destroy()
+    })
   })
 }
 
