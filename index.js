@@ -106,6 +106,16 @@ if (LOGSENE_BULK_SIZE < MIN_LOGSENE_BULK_SIZE) {
   LOGSENE_BULK_SIZE = MIN_LOGSENE_BULK_SIZE
 }
 
+
+function removeFields (fieldList, doc) {
+  if (fieldList && fieldList.length > 0 && fieldList[0] !== '') {
+    for (var i = 0; i < fieldList.length; i++) {
+      delete doc[fieldList[i]]
+    }
+  }
+  return doc
+}
+
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -161,6 +171,8 @@ function Logsene (token, type, url, storageDirectory, options) {
   if (process.env.LOGSENE_TMP_DIR || storageDirectory) {
     this.diskBuffer(true, process.env.LOGSENE_TMP_DIR || storageDirectory)
   }
+  var fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || ''
+  this.removeFieldsList = fieldListStr.replace(/ /g, '').split(',')
 }
 util.inherits(Logsene, events.EventEmitter)
 
@@ -241,7 +253,11 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
 Logsene.prototype.log = function (level, message, fields, callback) {
   this.logCount = this.logCount + 1
   var type = fields ? fields._type : this.type
-
+  if (this.options.useIndexInBulkUrl) {
+    // not a Sematext service -> use only one type per index 
+    // Elasticsearch > 6.x allows only one type per index
+    type = this.type
+  }
   var elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
@@ -253,6 +269,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (disableJsonEnrichment) {
     msg = {}
   }
+  msg = removeFields(this.removeFieldsList, msg)
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
@@ -361,7 +378,7 @@ Logsene.prototype.send = function (callback) {
           storeFileFlag = false
         }
         if (logseneError && limitRegex.test(logseneError)) {
-            // && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false'
+          // && process.env.LOGSENE_BUFFER_ON_APP_LIMIT === 'false'
           storeFileFlag = false
         }
         if (storeFileFlag) {
@@ -421,5 +438,4 @@ Logsene.prototype.shipFile = function (name, data, cb) {
     req.destroy()
   })
 }
-
 module.exports = Logsene

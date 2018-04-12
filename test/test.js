@@ -164,6 +164,7 @@ describe('Accept dynamic index name function', function () {
     }
   })
 })
+
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
     this.timeout(120000)
@@ -327,6 +328,37 @@ describe('Logsene log ', function () {
       })
       logsene.on('error', console.log)
       for (var i = 0; i <= 1001; i++) {
+        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+      }
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
+    this.timeout(25000)
+    process.env.LOGSENE_REMOVE_FIELDS='host,ip'
+    try {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var endTest = false
+      logsene.on('logged', function (event) {
+        if (endTest === true) {
+          return
+        }
+        endTest = true
+        if (event.msg.host !== undefined) {
+          done(new Error('Fields [' + process.env.LOGSENE_REMOVE_FIELDS + '] not removed:' + JSON.stringify(event.msg)))
+          process.env.LOGSENE_REMOVE_FIELDS = null
+        } else {
+          done()
+          process.env.LOGSENE_REMOVE_FIELDS = null
+        }     
+      })
+      logsene.once('error', function (event) {
+        console.log(event)
+        done(event)
+      })
+      logsene.on('error', console.log)
+      for (var i = 0; i <= 1; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
       }
     } catch (err) {
