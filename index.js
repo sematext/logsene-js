@@ -269,7 +269,6 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (disableJsonEnrichment) {
     msg = {}
   }
-  msg = removeFields(this.removeFieldsList, msg)
   for (var x in fields) {
     // rename fields for Elasticsearch 2.x
     if (startsWithUnderscore.test(x) || hasDots.test(x)) {
@@ -283,6 +282,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (msg['@timestamp'] && typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
+  msg = removeFields(this.removeFieldsList, msg)
   var _index = this.token
   if (fields && typeof (fields._index) === 'function') {
     _index = fields._index(msg)
