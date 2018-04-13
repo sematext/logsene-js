@@ -336,7 +336,7 @@ describe('Logsene log ', function () {
   })
   it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
     this.timeout(25000)
-    process.env.LOGSENE_REMOVE_FIELDS='host,ip'
+    process.env.LOGSENE_REMOVE_FIELDS='testField,ip'
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       var endTest = false
@@ -345,7 +345,7 @@ describe('Logsene log ', function () {
           return
         }
         endTest = true
-        if (event.msg.host !== undefined) {
+        if (event.msg.testField !== undefined) {
           done(new Error('Fields [' + process.env.LOGSENE_REMOVE_FIELDS + '] not removed:' + JSON.stringify(event.msg)))
           process.env.LOGSENE_REMOVE_FIELDS = null
         } else {
