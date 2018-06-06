@@ -145,7 +145,9 @@ function deepConvert (src, cb) {
         var newKey = newKV[0]
         var newVal = newKV[1]
 
-        if (Array.isArray(newVal) || newVal.constructor === Object) {
+        if (newVal !== undefined &&
+            newVal !== null &&
+            (Array.isArray(newVal) || newVal.constructor === Object)) {
           dest[newKey] = deepConvert(newVal, cb)
         } else {
           dest[newKey] = newVal
