@@ -116,6 +116,51 @@ function removeFields (fieldList, doc) {
   return doc
 }
 
+// Create a deep clone of an object while allowing caller to rename
+// keys, replace values, or reject key-pairs entirely.
+//
+// Does not modify the source object. Callback receives (key, value)
+// and is expected to return a two-item array [newKey, newValue], or
+// null if the pair should be absent from the resulting object.
+
+function deepConvert (src, cb) {
+  var dest
+
+  if (Array.isArray(src)) {
+    dest = []
+  } else if (src.constructor === Object) {
+    dest = {}
+  }
+
+  if (dest) {
+    for (var key in src) {
+      if (src.hasOwnProperty(key)) {
+        var val = src[key]
+        var newKV = cb(key, val)
+        if (newKV === null) {
+          // skip this field entirely
+          continue
+        }
+
+        var newKey = newKV[0]
+        var newVal = newKV[1]
+
+        if (newVal !== undefined &&
+            newVal !== null &&
+            (Array.isArray(newVal) || newVal.constructor === Object)) {
+          dest[newKey] = deepConvert(newVal, cb)
+        } else {
+          dest[newKey] = newVal
+        }
+      }
+    }
+  } else {
+    dest = src
+  }
+
+  return dest
+}
+
 /**
  * token - the LOGSENE Token
  * type - type of log (string)
@@ -269,16 +314,15 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (disableJsonEnrichment) {
     msg = {}
   }
-  for (var x in fields) {
-    // rename fields for Elasticsearch 2.x
-    if (startsWithUnderscore.test(x) || hasDots.test(x)) {
-      msg[x.replace(/\./g, '_').replace(/^_+/, '')] = fields[x]
+  var esSanitizedFields = deepConvert(fields, function (key, val) {
+    if (typeof val === 'function') {
+      return null
     } else {
-      if (!(typeof fields[x] === 'function')) {
-        msg[x] = fields[x]
-      }
+      return [key.replace(/\./g, '_').replace(/^_+/, ''),
+              val]
     }
-  }
+  })
+  msg = Object.assign(msg, esSanitizedFields)
   if (msg['@timestamp'] && typeof msg['@timestamp'] === 'number') {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
