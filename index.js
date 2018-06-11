@@ -106,7 +106,6 @@ if (LOGSENE_BULK_SIZE < MIN_LOGSENE_BULK_SIZE) {
   LOGSENE_BULK_SIZE = MIN_LOGSENE_BULK_SIZE
 }
 
-
 function removeFields (fieldList, doc) {
   if (fieldList && fieldList.length > 0 && fieldList[0] !== '') {
     for (var i = 0; i < fieldList.length; i++) {
@@ -125,13 +124,11 @@ function removeFields (fieldList, doc) {
 
 function deepConvert (src, cb) {
   var dest
-
   if (Array.isArray(src)) {
     dest = []
-  } else if (src.constructor === Object) {
+  } else {
     dest = {}
   }
-
   if (dest) {
     for (var key in src) {
       if (src.hasOwnProperty(key)) {
@@ -299,7 +296,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   this.logCount = this.logCount + 1
   var type = fields ? fields._type : this.type
   if (this.options.useIndexInBulkUrl) {
-    // not a Sematext service -> use only one type per index 
+    // not a Sematext service -> use only one type per index
     // Elasticsearch > 6.x allows only one type per index
     type = this.type
   }
@@ -319,7 +316,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
       return null
     } else {
       return [key.replace(/\./g, '_').replace(/^_+/, ''),
-              val]
+        val]
     }
   })
   msg = Object.assign(msg, esSanitizedFields)
