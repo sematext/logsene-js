@@ -143,8 +143,8 @@ function deepConvert (src, cb) {
         var newVal = newKV[1]
 
         if (newVal !== undefined &&
-            newVal !== null &&
-            (Array.isArray(newVal) || newVal.constructor === Object)) {
+          newVal !== null &&
+          (Array.isArray(newVal) || newVal.constructor === Object)) {
           dest[newKey] = deepConvert(newVal, cb)
         } else {
           dest[newKey] = newVal
@@ -213,7 +213,7 @@ function Logsene (token, type, url, storageDirectory, options) {
   if (process.env.LOGSENE_TMP_DIR || storageDirectory) {
     this.diskBuffer(true, process.env.LOGSENE_TMP_DIR || storageDirectory)
   }
-  var fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || ''
+  var fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || process.env.REMOVE_FIELDS || ''
   this.removeFieldsList = fieldListStr.replace(/ /g, '').split(',')
 }
 util.inherits(Logsene, events.EventEmitter)

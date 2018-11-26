@@ -37,7 +37,8 @@ In general Elasticsearch > 2.3 (including Logsene) does not allow fields with le
 - LOGSENE_MAX_MESSAGE_FIELD_SIZE - maximum size of the 'message' field, default 240k
 - LOGSENE_URL - URL for the Logsene receiver. E.g. for On-Premise version. Defaults to Sematext Logsene SaaS receiver https://logsene-receiver.sematext.com/_bulk
 - LOGSENE_BUFFER_ON_APP_LIMIT - default 'true'. HTTP bulk requests are repeated until Logsene accepts logs again. Please increase your daily limit setting in Logsene App settings, once you see "403, App limit reached" errors. Setting the value to 'false' will disable disk buffering only for failed http requests '403, Forbidden / App limit reached'. We recommend to keep the default setting 'true' to avoid any loss of logs. 
-- LOGSENE_REMOVE_FIELDS - a comma separated list of fields, which should not be logged
+- LOGSENE_REMOVE_FIELDS (deprecated) - a comma separated list of fields, which should not be logged
+- REMOVE_FIELDS - a comma separated list of fields, which should not be logged
 
 ## Security
 
