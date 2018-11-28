@@ -74,6 +74,31 @@ var envFileName = '/etc/sematext/receivers.config'
 **/
 loadEnvFromFile(envFileName)
 
+// removing LOGSENE from ENV variable names
+// and be backward compatible in case users still use old ENV variable names
+var envVarMapping = [
+  ['LOGSENE_MAX_MESSAGE_FIELD_SIZE', 'LOGS_MAX_MESSAGE_FIELD_SIZE'],
+  ['LOGSENE_MAX_STORED_REQUESTS', 'LOGS_MAX_STORED_REQUESTS'],
+  ['LOGSENE_BULK_SIZE_BYTES', 'LOGS_BULK_SIZE_BYTES'],
+  ['LOGSENE_BULK_SIZE', 'LOGS_BULK_SIZE'],
+  ['LOGSENE_LOG_INTERVAL', 'LOG_INTERVAL'],
+  ['LOGSENE_DISK_BUFFER_INTERVAL', 'LOGS_DISK_BUFFER_INTERVAL'],
+  ['LOGSENE_RECEIVER_URL', 'LOGS_RECEIVER_URL'],
+  ['SPM_RECEIVER_URL', 'MONITORING_RECEIVER_URL'],
+  ['SPM_TOKEN', 'MONITORING_TOKEN'],
+  ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS'],
+  ['LOGSENE_DISK_BUFFER_INTERVAL', 'EVENTS_RECEIVER_URL ']
+]
+function mapEnv(item) {
+    if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
+      process.env[item[0]] = process.env[item[1]]
+      if (/logsene-js/.test(process.env.DEBUG)) {
+        console.log('Set ', item[0], ' to ', process.env[item[0]], ' from ', item[1])
+      }
+    }
+}
+envVarMapping.forEach(mapEnv)
+
 // SPM_REPORTED_HOSTNAME might be set by Sematext Docker Agent
 // the container hostname might not be helpful ...
 // this might be removed after next release of SDA setting xLogseneOrigin from SDA
