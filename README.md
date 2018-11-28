@@ -31,14 +31,16 @@ In general Elasticsearch > 2.3 (including Logsene) does not allow fields with le
 
 
 ## Environment variables
-- LOGSENE_TMP_DIR - Directory to store failed bulk requests, for later re-transmission. Failed requests are not stored, when LOGSENE_TMP_DIR is not set.
-- LOGSENE_LOG_INTERVAL - Time to collect logs before a bulk request is done. Default 10000 ms
-- LOGSENE_BULK_SIZE - Maximum size of a bulk request. Default 1000.
-- LOGSENE_MAX_MESSAGE_FIELD_SIZE - maximum size of the 'message' field, default 240k
-- LOGSENE_URL - URL for the Logsene receiver. E.g. for On-Premise version. Defaults to Sematext Logsene SaaS receiver https://logsene-receiver.sematext.com/_bulk
-- LOGSENE_BUFFER_ON_APP_LIMIT - default 'true'. HTTP bulk requests are repeated until Logsene accepts logs again. Please increase your daily limit setting in Logsene App settings, once you see "403, App limit reached" errors. Setting the value to 'false' will disable disk buffering only for failed http requests '403, Forbidden / App limit reached'. We recommend to keep the default setting 'true' to avoid any loss of logs. 
-- LOGSENE_REMOVE_FIELDS (deprecated) - a comma separated list of fields, which should not be logged
-- REMOVE_FIELDS - a comma separated list of fields, which should not be logged
+- LOGS_TMP_DIR - Directory to store failed bulk requests, for later re-transmission. Failed requests are not stored, when LOGSENE_TMP_DIR is not set.
+- LOG_INTERVAL - Time to collect logs before a bulk request is done. Default 10000 ms
+- LOGS_BULK_SIZE - Maximum size of a bulk request. Default 1000.
+- LOGS_MAX_MESSAGE_FIELD_SIZE - maximum size of the 'message' field, default 240k
+- LOGS_RECEIVER_URL - URL for the Logsene receiver. E.g. for On-Premise version. Defaults to Sematext Logsene SaaS receiver https://logsene-receiver.sematext.com/_bulk
+- LOGS_BUFFER_ON_APP_LIMIT - default 'true'. HTTP bulk requests are repeated until Logsene accepts logs again. Please increase your daily limit setting in Logsene App settings, once you see "403, App limit reached" errors. Setting the value to 'false' will disable disk buffering only for failed http requests '403, Forbidden / App limit reached'. We recommend to keep the default setting 'true' to avoid any loss of logs. 
+- LOGS_REMOVE_FIELDS - a comma separated list of fields, which should not be logged
+
+Note: __Previous versions of this module used the LOGSENE_ prefix for the settings above. 
+Logsene-js is backward compatible to previous environment variable names. However all LOGSENE_ variable names are depracated and might be removed in future relases. __
 
 ## Security
 
