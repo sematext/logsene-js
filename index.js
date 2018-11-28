@@ -90,8 +90,10 @@ var envVarMapping = [
   ['LOGSENE_TMP_DIR', 'LOGS_TMP_DIR'],
   ['LOGSENE_BUFFER_ON_APP_LIMIT ', 'LOGS_BUFFER_ON_APP_LIMIT'],
   ['LOGSENE_REMOVE_FIELDS', 'LOGS_REMOVE_FIELDS'],
-  ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS']
+  ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS'],
+  ['SPM_REPORTED_HOSTNAME', 'REPORTED_HOSTNAME']
 ]
+
 function mapEnv(item) {
     if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
       process.env[item[0]] = process.env[item[1]]
