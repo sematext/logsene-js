@@ -34,7 +34,7 @@ http.createServer(function (req, res) {
   //   console.log(data.toString().substring(0,10))
   // })
   res.end(body)
-  // res.destroy()
+// res.destroy()
 }).listen(19200, '127.0.0.1')
 
 var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 35
@@ -121,7 +121,7 @@ describe('Logsene constructor', function () {
         done(new Error('URL does not contain token: ' + l.url))
       }
     } catch (err) {
-        // nothing to do here
+      // nothing to do here
     }
   })
   it('should have "/_bulk" in url, when only host:port is specified', function (done) {
@@ -136,7 +136,7 @@ describe('Logsene constructor', function () {
         done(new Error('URL does not contain _bulk: ' + l.url))
       }
     } catch (err) {
-        // nothing to do here
+      // nothing to do here
     }
   })
 })
@@ -160,7 +160,7 @@ describe('Accept dynamic index name function', function () {
         }
       })
     } catch (err) {
-        // nothing to do here
+      // nothing to do here
     }
   })
 })
@@ -336,7 +336,7 @@ describe('Logsene log ', function () {
   })
   it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
     this.timeout(25000)
-    process.env.LOGSENE_REMOVE_FIELDS='testField,ip'
+    process.env.LOGSENE_REMOVE_FIELDS = 'testField,ip'
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       var endTest = false
@@ -351,7 +351,7 @@ describe('Logsene log ', function () {
         } else {
           done()
           process.env.LOGSENE_REMOVE_FIELDS = null
-        }     
+        }
       })
       logsene.once('error', function (event) {
         console.log(event)
@@ -371,8 +371,8 @@ describe('Logsene log ', function () {
       httpStatusToReturn = 501
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // logsene.once('log', function (event) {
-        // this should not happen in this test case
-        // done(event)
+      // this should not happen in this test case
+      // done(event)
       // })
 
       logsene.once('error', function (event) {

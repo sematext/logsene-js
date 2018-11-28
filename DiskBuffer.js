@@ -37,8 +37,7 @@ util.inherits(DiskBuffer, events.EventEmitter)
 DiskBuffer.prototype.unlock = function (fileName) {
   try {
     fs.renameSync(fileName, fileName.replace('.lock', ''))
-  } catch (err) {
-  }
+  } catch (err) {}
 }
 DiskBuffer.prototype.retransmitNext = function () {
   if (this.storedFiles.length === 0) {

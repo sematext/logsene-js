@@ -94,13 +94,13 @@ var envVarMapping = [
   ['SPM_REPORTED_HOSTNAME', 'REPORTED_HOSTNAME']
 ]
 
-function mapEnv(item) {
-    if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
-      process.env[item[0]] = process.env[item[1]]
-      if (/logsene-js/.test(process.env.DEBUG)) {
-        console.log('Set ', item[0], ' to ', process.env[item[0]], ' from ', item[1])
-      }
+function mapEnv (item) {
+  if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
+    process.env[item[0]] = process.env[item[1]]
+    if (/logsene-js/.test(process.env.DEBUG)) {
+      console.log('Set ', item[0], ' to ', process.env[item[0]], ' from ', item[1])
     }
+  }
 }
 envVarMapping.forEach(mapEnv)
 
