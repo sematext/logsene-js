@@ -87,7 +87,7 @@ var envVarMapping = [
   ['SPM_RECEIVER_URL', 'MONITORING_RECEIVER_URL'],
   ['SPM_TOKEN', 'MONITORING_TOKEN'],
   ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS'],
-  ['LOGSENE_DISK_BUFFER_INTERVAL', 'EVENTS_RECEIVER_URL ']
+  ['LOGSENE_TMP_DIR', 'LOGS_TMP_DIR ']
 ]
 function mapEnv(item) {
     if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
