@@ -87,7 +87,10 @@ var envVarMapping = [
   ['SPM_RECEIVER_URL', 'MONITORING_RECEIVER_URL'],
   ['SPM_TOKEN', 'MONITORING_TOKEN'],
   ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS'],
-  ['LOGSENE_TMP_DIR', 'LOGS_TMP_DIR ']
+  ['LOGSENE_TMP_DIR', 'LOGS_TMP_DIR'],
+  ['LOGSENE_BUFFER_ON_APP_LIMIT ', 'LOGS_BUFFER_ON_APP_LIMIT'],
+  ['LOGSENE_REMOVE_FIELDS', 'LOGS_REMOVE_FIELDS'],
+  ['LOGSENE_REMOVE_FIELDS', 'REMOVE_FIELDS']
 ]
 function mapEnv(item) {
     if ((!process.env[item[0]]) && (process.env[item[1]] !== undefined)) {
@@ -207,7 +210,7 @@ function Logsene (token, type, url, storageDirectory, options) {
   this.maxMessageFieldSize = MAX_MESSAGE_FIELD_SIZE
   this.xLogseneOrigin = xLogseneOrigin
   this.token = token
-  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || 'https://logsene-receiver.sematext.com/_bulk')
+  this.setUrl(url || process.env.LOGSENE_URL || process.env.LOGSENE_RECEIVER_URL || process.env.LOGS_URL || 'https://logsene-receiver.sematext.com/_bulk')
   this.type = type || 'logs'
   this.hostname = process.env.SPM_REPORTED_HOSTNAME || os.hostname()
   this.bulkReq = new streamBuffers.WritableStreamBuffer({
