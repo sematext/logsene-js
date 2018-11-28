@@ -39,8 +39,7 @@ In general Elasticsearch > 2.3 (including Logsene) does not allow fields with le
 - LOGS_BUFFER_ON_APP_LIMIT - default 'true'. HTTP bulk requests are repeated until Logsene accepts logs again. Please increase your daily limit setting in Logsene App settings, once you see "403, App limit reached" errors. Setting the value to 'false' will disable disk buffering only for failed http requests '403, Forbidden / App limit reached'. We recommend to keep the default setting 'true' to avoid any loss of logs. 
 - LOGS_REMOVE_FIELDS - a comma separated list of fields, which should not be logged
 
-Note: __Previous versions of logsene-js used LOGSENE_ instead of LOGS_ prefix for the settings above. 
-Logsene-js is backward compatible to previous environment variable names. However all LOGSENE_ variable names are depracated and might be removed in future relases. __
+Note: __Previous versions of logsene-js used LOGSENE instead of LOGS prefix for the settings above. Logsene-js is backward compatible to previous environment variable names. However all variable names with the LOGSENE prefix are depracated and might be removed in future relases.__
 
 ## Security
 
