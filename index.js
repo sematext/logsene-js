@@ -30,9 +30,7 @@ var streamBuffers = require('stream-buffers')
 var initialBufferSize = 1024 * 1024
 var incrementBuffer = 1024 * 1024
 // re-usable regular expressions
-var startsWithUnderscore = /^_/
 var limitRegex = /limit/i
-var hasDots = /\./g
 var appNotFoundRegEx = /Application not found for token/i
 var disableJsonEnrichment = (process.env.ENABLE_JSON_ENRICHMENT === 'false')
 
@@ -219,7 +217,6 @@ function Logsene (token, type, url, storageDirectory, options) {
     initialSize: initialBufferSize,
     incrementAmount: incrementBuffer
   })
-  this.offset
   this.logCount = 0
   this.sourceName = null
   if (process.mainModule && process.mainModule.filename) {
@@ -424,6 +421,7 @@ Logsene.prototype.send = function (callback) {
       logseneError = res.headers['x-logsene-error']
     }
     var errorMessage = null
+
     if (err || (res && res.statusCode > 399) || logseneError) {
       if (err && (err.code || err.message)) {
         err.url = options.url
@@ -462,13 +460,37 @@ Logsene.prototype.send = function (callback) {
         }
       }
     } else {
-      self.emit('log', {source: 'logsene-js', count: count, url: options.url})
-      delete options.body
-      if (req) {
-        req.destroy()
+      try {
+        res.body = JSON.parse(res.body)
+      } catch (error) {
+        err = error
       }
-      if (callback) {
-        callback(null, res)
+
+      if (err) {
+        self.emit('error', {source: 'logsene-js', err: err})
+        if (self.persistence && req) {
+          req.destroy()
+        }
+      } else {
+        res.body.items.forEach(function (item) {
+          var result = item.index || item.create || item.update || item.delete
+          if (result && result.status > 399) {
+            errorMessage = 'HTTP status code:' + result.status + ' Error: ' + JSON.stringify(result.error)
+            self.emit('error', {
+              source: 'logsene-js',
+              err: {message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url}
+            })
+          }
+        })
+
+        self.emit('log', {source: 'logsene-js', count: count, url: options.url})
+        delete options.body
+        if (req) {
+          req.destroy()
+        }
+        if (callback) {
+          callback(null, res)
+        }
       }
     }
   }

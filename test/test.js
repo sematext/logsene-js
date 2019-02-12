@@ -12,29 +12,80 @@ console.log('Token: ' + process.env.LOGSENE_TOKEN)
 
 var http = require('http')
 var httpStatusToReturn = 200
+var mappingConflicts = 0
 http.createServer(function (req, res) {
+  var operations = ['index', 'create', 'update', 'delete']
   var body = JSON.stringify({error: 'bad request', status: 400})
-  if (httpStatusToReturn === 200) {
-    body = 'OK'
-  }
-  var status = httpStatusToReturn
   var headers = {'Content-Type': 'text/plain'}
-  if (httpStatusToReturn === 403) {
-    status = 403
-    headers['X-Logsene-Error'] = 'Application limits reached'
-    body = '{"took":1,"errors":true,"items":[]}'
+  if (httpStatusToReturn === 200) {
+    var rawData = ''
+
+    req.on('data', function (chunk) { rawData += chunk })
+    req.on('end', function () {
+      var data = rawData.toString().split('\n')
+      const items = []
+      for (var i = data.length - 1; i >= 0; i--) {
+        var logResult = {
+          _index: 'test',
+          _type: '_doc',
+          _id: 0,
+          _version: 1,
+          result: '',
+          _shards: {
+            total: 2,
+            successful: 1,
+            failed: 0
+          },
+          status: 0,
+          _seq_no: 0,
+          _primary_term: 1
+        }
+
+        if (data[i]) {
+          logResult._id = i
+          if (mappingConflicts) {
+            mappingConflicts--
+            logResult.status = 400
+            logResult.result = 'mapper_parsing_exception'
+          } else {
+            logResult.status = 201
+            logResult.result = 'created'
+          }
+
+          var operation = operations[Math.floor(Math.random() * operations.length)]
+          items.push({
+            [operation]: logResult
+          })
+
+          i--
+        }
+      }
+      body = JSON.stringify({
+        took: 30,
+        errors: false,
+        items: items
+      })
+      res.writeHead(httpStatusToReturn, headers)
+      res.end(body)
+    })
+  } else {
+    if (httpStatusToReturn === 403) {
+      headers['X-Logsene-Error'] = 'Application limits reached'
+      body = '{"took":1,"errors":true,"items":[]}'
+    }
+
+    if (httpStatusToReturn === 400) {
+      // headers['x-logsene-error'] = 'Application not found for token'
+      body = '{"error":"Application not found for token \'test\', \'Expected token length of 36, but got 4\'","errorId":"2828454033565","status":"400"}'
+    }
+
+    res.writeHead(httpStatusToReturn, headers)
+    // req.on('data', function (data) {
+    //   console.log(data.toString().substring(0,10))
+    // })
+    res.end(body)
+    // res.destroy()
   }
-  if (httpStatusToReturn === 400) {
-    status = 400
-    // headers['x-logsene-error'] = 'Application not found for token'
-    body = '{"error":"Application not found for token \'test\', \'Expected token length of 36, but got 4\'","errorId":"2828454033565","status":"400"}'
-  }
-  res.writeHead(status, headers)
-  // req.on('data', function (data) {
-  //   console.log(data.toString().substring(0,10))
-  // })
-  res.end(body)
-// res.destroy()
 }).listen(19200, '127.0.0.1')
 
 var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 35
@@ -143,17 +194,31 @@ describe('Logsene constructor', function () {
 
 describe('Accept dynamic index name function', function () {
   it('generates index name per document', function (done) {
+    this.timeout(25000)
     try {
       var token = 'YOUR_TEST_TOKEN'
-      var l = new Logsene(token, 'test', 'http://localhost:9200')
-      l.once('logged', function (event) {
-        if (event._index === 'docSpecificIndexName') {
+      var logsene = new Logsene(token, 'test', 'http://localhost:19200')
+      var logged = false
+      var log = false
+      function checkDone () {
+        if (log && logged) {
           done()
+        }
+      }
+
+      logsene.once('logged', function (event) {
+        logged = true
+        if (event._index === 'docSpecificIndexName') {
+          checkDone()
         } else {
           done(new Error('_index function not executed'))
         }
       })
-      l.log('info', 'test _index function', {
+      logsene.on('log', function (event) {
+        log = true
+        checkDone()
+      })
+      logsene.log('info', 'test _index function', {
         docSpecificIndexName: 'docSpecificIndexName',
         _index: function (msg) {
           return msg.docSpecificIndexName
@@ -309,25 +374,98 @@ describe('Logsene log ', function () {
   })
   it('transmit', function (done) {
     this.timeout(25000)
+    var logCount = 1001
+    var counter = 0
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
           done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
-        } else {
-          // done()
         }
       })
-      logsene.once('log', function (event) {
-        done()
+      logsene.on('log', function (event) {
+        counter += event.count
+        if (counter === logCount) {
+          done()
+        } else if (counter > logCount) {
+          done(new Error(`Too many log events received. Expected ${logCount}, received ${counter}.`))
+        }
       })
       logsene.once('error', function (event) {
         console.log(event)
         done(event)
       })
       logsene.on('error', console.log)
-      for (var i = 0; i <= 1001; i++) {
+      for (var i = 0; i < logCount; i++) {
+        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+      }
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('should fail to transmit some of the logs due to index conflict', function (done) {
+    this.timeout(25000)
+    var totalLogs = 1001
+    var totalConflicts = 100
+    var logCounter = 0
+    var conflictCounter = 0
+    mappingConflicts = totalConflicts
+    try {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      // check for all required fields!
+      logsene.on('logged', function (event) {
+        if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
+          done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
+        }
+      })
+      function logReceived () {
+        if (logCounter === totalLogs && conflictCounter === totalConflicts) {
+          done()
+        } else if (logCounter > totalLogs || conflictCounter > totalConflicts) {
+          done(new Error(`Too many log events received. Expected ${totalLogs} and ${totalConflicts}, received ${logCounter} and ${conflictCounter}.`))
+        }
+      }
+      logsene.on('log', function (event) {
+        logCounter += event.count
+        logReceived()
+      })
+      logsene.on('error', function (event) {
+        conflictCounter++
+        logReceived()
+      })
+      for (var i = 0; i < totalLogs; i++) {
+        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+      }
+    } catch (err) {
+      done(err)
+    }
+  })
+  it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
+    this.timeout(25000)
+    process.env.LOGSENE_REMOVE_FIELDS = 'testField,ip'
+    try {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var endTest = false
+      logsene.on('logged', function (event) {
+        if (endTest === true) {
+          return
+        }
+        endTest = true
+        if (event.msg.testField !== undefined) {
+          done(new Error('Fields [' + process.env.LOGSENE_REMOVE_FIELDS + '] not removed:' + JSON.stringify(event.msg)))
+          process.env.LOGSENE_REMOVE_FIELDS = null
+        } else {
+          done()
+          process.env.LOGSENE_REMOVE_FIELDS = null
+        }
+      })
+      logsene.once('error', function (event) {
+        console.log(event)
+        done(event)
+      })
+      logsene.on('error', console.log)
+      for (var i = 0; i <= 1; i++) {
         logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
       }
     } catch (err) {
