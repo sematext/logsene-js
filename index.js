@@ -33,7 +33,10 @@ var incrementBuffer = 1024 * 1024
 var limitRegex = /limit/i
 var appNotFoundRegEx = /Application not found for token/i
 var disableJsonEnrichment = (process.env.ENABLE_JSON_ENRICHMENT === 'false')
-
+var replaceDotsInFieldNames = true
+if (process.env.REPLACE_DOTS_IN_FIELD_NAMES === 'false' || process.env.REPLACE_DOTS_IN_FIELD_NAMES === '0') {
+  replaceDotsInFieldNames = false
+}
 // load ENV like Logsene receivers from file containing
 // env vars e.g. SPM_RECEIVER_URL, EVENTS_RECEIVER_URL, LOGSENE_RECEIVER_URL
 // the file overwrites the actual environment
@@ -342,8 +345,12 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     if (typeof val === 'function') {
       return null
     } else {
-      return [key.replace(/\./g, '_').replace(/^_+/, ''),
-        val]
+      if (replaceDotsInFieldNames) {
+        return [key.replace(/\./g, '_').replace(/^_+/, ''), val]
+      } else {
+        // remove leading _
+        return [key.replace(/^_+/, ''), val]
+      }
     }
   })
   msg = Object.assign(msg, esSanitizedFields)
@@ -356,7 +363,8 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     _index = fields._index(msg)
   }
   if (msg.message && typeof msg.message === 'string' && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
-    var cutMsg = new Buffer(this.maxMessageFieldSize)
+    // new nodejs api, let's use Buffer.alloc instead of Buffer(size)
+    var cutMsg = Buffer.alloc ? Buffer.alloc(this.maxMessageFieldSize) : new Buffer(this.maxMessageFieldSize)
     cutMsg.write(msg.message)
     msg.message = cutMsg.toString()
     if (msg.originalLine) {
