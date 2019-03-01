@@ -9,11 +9,12 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
 node_js:
-  - "4"
-  - "5"
+#  - "4"
+#  - "5"
   - "6"
   - "8"
-  - "9"
+  - "10"
+  - "11"
 install:
   - mkdir tmp
   - mkdir mocha-test
