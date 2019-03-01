@@ -385,7 +385,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
     this.send()
   }
-  this.emit('logged', {msg: msg, _index: _index})
+  this.emit('logged', { msg: msg, _index: _index })
   if (callback) {
     callback(null, msg)
   }
@@ -429,7 +429,7 @@ Logsene.prototype.send = function (callback) {
       logseneError = res.headers['x-logsene-error']
     }
     var errorMessage = null
-
+    var errObj = null
     if (err || (res && res.statusCode > 399) || logseneError) {
       if (err && (err.code || err.message)) {
         err.url = options.url
@@ -441,7 +441,8 @@ Logsene.prototype.send = function (callback) {
       if (logseneError) {
         errorMessage += ', ' + logseneError
       }
-      self.emit('error', {source: 'logsene-js', err: (err || {message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url})})
+      errObj = { source: 'logsene-js', err: (err || { message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url }) }
+      self.emit('error', errObj)
       if (self.persistence) {
         if (req) {
           req.destroy()
@@ -451,7 +452,7 @@ Logsene.prototype.send = function (callback) {
         if (res && res.body && appNotFoundRegEx.test(res.body)) {
           storeFileFlag = false
         }
-        if (res && res.statusCode && res.statusCode == 400) {
+        if (res && res.statusCode && res.statusCode === 400) {
           storeFileFlag = false
         }
         if (logseneError && limitRegex.test(logseneError)) {
@@ -475,7 +476,8 @@ Logsene.prototype.send = function (callback) {
       }
 
       if (err) {
-        self.emit('error', {source: 'logsene-js', err: err})
+        errObj = { source: 'logsene-js', err: err }
+        self.emit('error', errObj)
         if (self.persistence && req) {
           req.destroy()
         }
@@ -484,20 +486,21 @@ Logsene.prototype.send = function (callback) {
           var result = item.index || item.create || item.update || item.delete
           if (result && result.status > 399) {
             errorMessage = 'HTTP status code:' + result.status + ' Error: ' + JSON.stringify(result.error)
-            self.emit('error', {
+            var errObj = {
               source: 'logsene-js',
-              err: {message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url}
-            })
+              err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
+            }
+            self.emit('error', errObj)
           }
         })
 
-        self.emit('log', {source: 'logsene-js', count: count, url: options.url})
+        self.emit('log', { source: 'logsene-js', count: count, url: options.url })
         delete options.body
         if (req) {
           req.destroy()
         }
         if (callback) {
-          callback(null, res)
+          callback(errObj, res)
         }
       }
     }
@@ -524,17 +527,17 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   options.url = self.url
   var req = self.request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
-      var errObj = {source: 'logsene re-transmit', err: (err || {message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name})}
+      var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name }) }
       self.emit('error', errObj)
       if (cb) {
         cb(errObj)
       }
     } else {
       if (cb) {
-        cb(null, {file: name, count: options.logCount})
+        cb(null, { file: name, count: options.logCount })
       }
-      self.emit('file shipped', {file: name, count: options.logCount})
-      self.emit('rt', {count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null})
+      self.emit('file shipped', { file: name, count: options.logCount })
+      self.emit('rt', { count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null })
     }
     setImmediate(function () {
       req.destroy()
