@@ -15,8 +15,8 @@ var httpStatusToReturn = 200
 var mappingConflicts = 0
 http.createServer(function (req, res) {
   var operations = ['index', 'create', 'update', 'delete']
-  var body = JSON.stringify({error: 'bad request', status: 400})
-  var headers = {'Content-Type': 'text/plain'}
+  var body = JSON.stringify({ error: 'bad request', status: 400 })
+  var headers = { 'Content-Type': 'text/plain' }
   if (httpStatusToReturn === 200) {
     var rawData = ''
 
@@ -139,7 +139,7 @@ describe('Logsene Load Test ', function () {
         done(event)
       })
       for (var i = 0; i < logCount; i++) {
-        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
       done(err)
@@ -249,7 +249,7 @@ describe('Logsene DiskBuffer ', function () {
       done()
     })
     setTimeout(function () {
-      db.store({message: 'hello'}, function (e, d) {
+      db.store({ message: 'hello' }, function (e, d) {
         db.retransmitNext.call(db)
       })
     }, 1000)
@@ -275,7 +275,7 @@ describe('Logsene persistance ', function () {
       })
       setTimeout(function () {
         for (var i = 0; i <= 1001; i++) {
-          logsene.log('info', 'test retransmit message ' + i, {_id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34})
+          logsene.log('info', 'test retransmit message ' + i, { _id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
         }
       }, 1000)
     } catch (err) {
@@ -308,10 +308,10 @@ describe('Logsene log ', function () {
     var logsene = new Logsene(token, 'test')
     // logsene.MAX_MESSAGE_FIELD_SIZE=5
     logsene.on('error', console.log)
-    var longMessage = new Buffer(logsene.maxMessageFieldSize * 2)
+    var longMessage = Buffer.alloc(logsene.maxMessageFieldSize * 2)
     longMessage = longMessage.fill('1').toString()
     try {
-      logsene.log('info', longMessage, {originalLine: longMessage}, function (err, msg) {
+      logsene.log('info', longMessage, { originalLine: longMessage }, function (err, msg) {
         if (err) {
           console.log(err)
           return done(err)
@@ -328,14 +328,19 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-  it('logs have default fields message, @timestamp, host, ip + custom fields', function (done) {
+  it('logs have default fields message, @timestamp, os.host, os.host.host_ip + custom fields', function (done) {
     this.timeout(20000)
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.once('logged', function (event) {
-        if (!event.msg.testField || !event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
-          done(new Error('missing fields in log: ' + JSON.stringify(event.msg)))
+        if (!event.msg.testField ||
+            !event.msg.message ||
+            !event.msg['@timestamp'] ||
+            !event.msg.severity ||
+            !event.msg.os.host ||
+            !event.msg.os.host_ip) {
+          done(new Error('missing fields in log: ' + JSON.stringify(event.msg, null, '\t')))
         } else {
           if (event.msg.message === 'test') {
             done()
@@ -345,7 +350,7 @@ describe('Logsene log ', function () {
       logsene.once('error', function (event) {
         done(event)
       })
-      logsene.log('info', 'test', {'_id': 'testID', testField: 'Test custom field '})
+      logsene.log('info', 'test', { '_id': 'testID', testField: 'Test custom field ' })
     } catch (err) {
       done(err)
     }
@@ -357,7 +362,7 @@ describe('Logsene log ', function () {
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.test_test) {
-          done(new Error('field _test was not renamed: ' + JSON.stringify(event.msg)))
+          done(new Error('field _test was not renamed: ' + JSON.stringify(event.msg, null, '\t')))
         } else {
           if (event.msg.test_test === 'test') {
             done()
@@ -367,7 +372,7 @@ describe('Logsene log ', function () {
       logsene.once('error', function (event) {
         done(event)
       })
-      logsene.log('info', 'test', {'_test.test': 'test'})
+      logsene.log('info', 'test', { '_test.test': 'test' })
     } catch (err) {
       done(err)
     }
@@ -380,8 +385,12 @@ describe('Logsene log ', function () {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.on('logged', function (event) {
-        if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
-          done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
+        if (!event.msg.message ||
+            !event.msg['@timestamp'] ||
+            !event.msg.severity ||
+            !event.msg.os.host ||
+            !event.msg.os.host_ip) {
+          done(new Error('missing fields in log:' + JSON.stringify(event.msg, null, '\t')))
         }
       })
       logsene.on('log', function (event) {
@@ -398,7 +407,7 @@ describe('Logsene log ', function () {
       })
       logsene.on('error', console.log)
       for (var i = 0; i < logCount; i++) {
-        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
       done(err)
@@ -415,7 +424,8 @@ describe('Logsene log ', function () {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
       // check for all required fields!
       logsene.on('logged', function (event) {
-        if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity || !event.msg.host || !event.msg.ip) {
+        if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity ||
+            !event.msg.os.host || !event.msg.os.host_ip) {
           done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
         }
       })
@@ -435,7 +445,7 @@ describe('Logsene log ', function () {
         logReceived()
       })
       for (var i = 0; i < totalLogs; i++) {
-        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
       done(err)
@@ -466,7 +476,7 @@ describe('Logsene log ', function () {
       })
       logsene.on('error', console.log)
       for (var i = 0; i <= 1; i++) {
-        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
       done(err)
@@ -497,7 +507,7 @@ describe('Logsene log ', function () {
       })
       logsene.on('error', console.log)
       for (var i = 0; i <= 1; i++) {
-        logsene.log('info', 'test message ' + i, {testField: 'Test custom field ' + i, counter: i})
+        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
       done(err)
