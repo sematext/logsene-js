@@ -337,7 +337,14 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && fields._id) {
     elasticsearchDocId = fields._id
   }
-  var msg = {'@timestamp': new Date(), message: message, severity: level, host: this.hostname, ip: ipAddress}
+  var msg = {'@timestamp': new Date(),
+    message: message, 
+    severity: level, 
+    os: {
+      host: this.hostname
+      host_ip: ipAddress
+    }
+  }
   if (disableJsonEnrichment) {
     msg = {}
   }
