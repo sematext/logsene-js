@@ -341,7 +341,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     message: message, 
     severity: level, 
     os: {
-      host: this.hostname
+      host: this.hostname,
       host_ip: ipAddress
     }
   }
