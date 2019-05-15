@@ -261,7 +261,7 @@ Logsene.prototype.setUrl = function (url) {
     this.url = tmpUrl
   }
   var Agent = null
-  var httpOptions = {maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS}
+  var httpOptions = { maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS }
   if (this.options.httpOptions) {
     var keys = Object.keys(this.options.httpOptions)
     for (var i = 0; i < keys.length; i++) {
@@ -337,9 +337,10 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && fields._id) {
     elasticsearchDocId = fields._id
   }
-  var msg = {'@timestamp': new Date(),
-    message: message, 
-    severity: level, 
+  var msg = {
+    '@timestamp': new Date(),
+    message: message,
+    severity: level,
     os: {
       host: this.hostname,
       host_ip: ipAddress
@@ -383,9 +384,9 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   }
 
   if (elasticsearchDocId !== null) {
-    this.bulkReq.write(stringifySafe({'index': {'_index': _index, '_id': String(elasticsearchDocId), '_type': type || this.type}}) + '\n')
+    this.bulkReq.write(stringifySafe({ 'index': { '_index': _index, '_id': String(elasticsearchDocId), '_type': type || this.type } }) + '\n')
   } else {
-    this.bulkReq.write(stringifySafe({'index': {'_index': _index, '_type': type || this.type}}) + '\n')
+    this.bulkReq.write(stringifySafe({ 'index': { '_index': _index, '_type': type || this.type } }) + '\n')
   }
   this.bulkReq.write(stringifySafe(msg) + '\n')
 
