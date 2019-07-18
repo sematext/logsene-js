@@ -33,7 +33,7 @@
   "homepage": "https://github.com/sematext/logsene-js",
   "dependencies": {
     "extend": "^3.0.0",
-    "fast-safe-stringify": "^1.1.6",
+    "fast-safe-stringify": "^2.0.6",
     "ip": "^1.1.4",
     "json-stringify-safe": "^5.0.1",
     "mkpath": "^1.0.0",
@@ -42,6 +42,6 @@
   },
   "devDependencies": {
     "mocha": "^6.1.4",
-    "standard": "^12.0.1"
+    "standard": "^13.0.2"
   }
 }

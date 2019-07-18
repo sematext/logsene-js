@@ -117,8 +117,8 @@ var MAX_LOGSENE_BULK_SIZE = 10000
 var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
 var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 2
 
-// upper limit a user could set
-var MAX_LOGSENE_BULK_SIZE_BYTES = 20 * 1024 * 1024
+// upper limit a user could set - 10 MB as configured in Sematext Cloud receivers
+var MAX_LOGSENE_BULK_SIZE_BYTES = 10 * 1024 * 1024
 // lower limit a user could set
 var MIN_LOGSENE_BULK_SIZE_BYTES = 1024 * 1024
 var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) || 1024 * 1024 * 3 // max 3 MB per http request
@@ -129,7 +129,7 @@ if (MAX_LOGSENE_BUFFER_SIZE > MAX_LOGSENE_BULK_SIZE_BYTES) {
 if (MAX_LOGSENE_BUFFER_SIZE < MIN_LOGSENE_BULK_SIZE_BYTES) {
   MAX_LOGSENE_BUFFER_SIZE = MIN_LOGSENE_BULK_SIZE_BYTES
 }
-var LOGSENE_BULK_SIZE = Number(process.env.LOGSENE_BULK_SIZE) || 1000 // max 1000 messages per bulk req.
+var LOGSENE_BULK_SIZE = Number(process.env.LOGSENE_BULK_SIZE) || 500 // max 500 messages per bulk req.
 if (LOGSENE_BULK_SIZE > MAX_LOGSENE_BULK_SIZE) {
   LOGSENE_BULK_SIZE = MAX_LOGSENE_BULK_SIZE
 }
