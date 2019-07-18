@@ -118,7 +118,7 @@ var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 100
 var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 2
 
 // upper limit a user could set - 10 MB as configured in Sematext Cloud receivers
-var MAX_LOGSENE_BULK_SIZE_BYTES = 10 * 1024 * 1024
+var MAX_LOGSENE_BULK_SIZE_BYTES = 10 * 1000 * 1000
 // lower limit a user could set
 var MIN_LOGSENE_BULK_SIZE_BYTES = 1024 * 1024
 var MAX_LOGSENE_BUFFER_SIZE = Number(process.env.LOGSENE_BULK_SIZE_BYTES) || 1024 * 1024 * 3 // max 3 MB per http request
