@@ -388,6 +388,9 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   } else {
     this.bulkReq.write(stringifySafe({ 'index': { '_index': _index, '_type': type || this.type } }) + '\n')
   }
+  if (msg._index) {
+    delete msg._index
+  }
   this.bulkReq.write(stringifySafe(msg) + '\n')
 
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
