@@ -230,6 +230,42 @@ describe('Accept dynamic index name function', function () {
   })
 })
 
+describe('Using _index from message + remove _index field from message', function () {
+  it('generates index name per document', function (done) {
+    this.timeout(25000)
+    try {
+      var token = 'YOUR_TEST_TOKEN'
+      var logsene = new Logsene(token, 'test', 'http://localhost:19200')
+      var logged = false
+      var log = false
+      function checkDone () {
+        if (log && logged) {
+          done()
+        }
+      }
+
+      logsene.once('logged', function (event) {
+        logged = true
+        if (event._index === 'docSpecificIndexName' && event.msg.index == undefined) {
+          checkDone()
+        } else {
+          done(new Error('_index function not executed'))
+        }
+      })
+      logsene.on('log', function (event) {
+        log = true
+        checkDone()
+      })
+      logsene.log('info', 'test _index function', {
+        _index: 'docSpecificIndexName',
+        message: 'hello'
+      })
+    } catch (err) {
+      // nothing to do here
+    }
+  })
+})
+
 describe('Logsene DiskBuffer ', function () {
   it('re-transmit', function (done) {
     this.timeout(120000)

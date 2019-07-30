@@ -369,7 +369,13 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   var _index = this.token
   if (fields && typeof (fields._index) === 'function') {
     _index = fields._index(msg)
+  } else {
+    if (fields && fields._index != undefined) {
+      _index = fields._index
+      delete msg.index
+    }
   }
+
   if (msg.message && typeof msg.message === 'string' && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
     // new nodejs api, let's use Buffer.alloc instead of Buffer(size)
     var cutMsg = Buffer.alloc ? Buffer.alloc(this.maxMessageFieldSize) : new Buffer(this.maxMessageFieldSize)
@@ -388,9 +394,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   } else {
     this.bulkReq.write(stringifySafe({ 'index': { '_index': _index, '_type': type || this.type } }) + '\n')
   }
-  if (msg._index) {
-    delete msg._index
-  }
+
   this.bulkReq.write(stringifySafe(msg) + '\n')
 
   if (this.logCount === LOGSENE_BULK_SIZE || this.bulkReq.size() > MAX_LOGSENE_BUFFER_SIZE) {
