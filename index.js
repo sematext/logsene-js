@@ -261,7 +261,7 @@ Logsene.prototype.setUrl = function (url) {
     this.url = tmpUrl
   }
   var Agent = null
-  var httpOptions = { maxSockets: MAX_CLIENT_SOCKETS, keepAlive: true, maxFreeSockets: MAX_CLIENT_SOCKETS }
+  var httpOptions = { maxSockets: MAX_CLIENT_SOCKETS, keepAlive: false, maxFreeSockets: MAX_CLIENT_SOCKETS }
   if (this.options.httpOptions) {
     var keys = Object.keys(this.options.httpOptions)
     for (var i = 0; i < keys.length; i++) {
@@ -493,7 +493,7 @@ Logsene.prototype.send = function (callback) {
       if (err) {
         errObj = { source: 'logsene-js', err: err }
         self.emit('error', errObj)
-        if (self.persistence && req) {
+        if (self.persistence && req && req.destroy) {
           req.destroy()
         }
       } else {
@@ -511,7 +511,7 @@ Logsene.prototype.send = function (callback) {
 
         self.emit('log', { source: 'logsene-js', count: count, url: options.url })
         delete options.body
-        if (req) {
+        if (req && req.destroy) {
           req.destroy()
         }
         if (callback) {
@@ -554,9 +554,9 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('file shipped', { file: name, count: options.logCount })
       self.emit('rt', { count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null })
     }
-    setImmediate(function () {
+    if (req && req.destroy) {
       req.destroy()
-    })
+    }
   })
 }
 module.exports = Logsene
