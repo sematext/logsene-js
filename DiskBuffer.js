@@ -24,7 +24,7 @@ function DiskBuffer (options) {
   var self = this
   this.tid = setInterval(function () {
     self.retransmitNext.call(self)
-  }, options.interval || 60000)
+  }, options.interval || 5000)
   mkpath(this.tmpDir, function (err) {
     if (err) {
       log('Error: can not activate disk buffer for logsene-js: ' + err)
@@ -69,7 +69,7 @@ DiskBuffer.prototype.retransmitNext = function () {
       var buffer = fs.readFileSync(lockedFileName)
       var self = this
       setImmediate(function () {
-        self.emit('retransmit-req', {fileName: lockedFileName, buffer: buffer})
+        self.emit('retransmit-req', { fileName: lockedFileName, buffer: buffer })
       })
     } catch (err) {
       // console.error('retransmitNext error: ' + err.message)
@@ -147,11 +147,11 @@ DiskBuffer.prototype.rmFile = function (fileName) {
   try {
     fs.unlinkSync(fileName)
     log('rm file:' + fileName)
-    this.emit('removed', {fileName: fileName})
+    this.emit('removed', { fileName: fileName })
   } catch (err) {
     log('rmFile: could not delete file:' + err.message)
     // ignore when file was already deleted
-    this.emit('removed', {fileName: fileName})
+    this.emit('removed', { fileName: fileName })
   } finally {
     if (index > -1) {
       this.storedFiles.splice(index, 1)

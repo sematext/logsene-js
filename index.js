@@ -287,7 +287,7 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
     this.db = DiskBuffer.createDiskBuffer({
       tmpDir: tmpDir,
       maxStoredRequests: Number(MAX_STORED_REQUESTS),
-      interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 60000
+      interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 5000
     })
     this.db.syncFileListFromDir()
     var self = this
