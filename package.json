@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/sematext/logsene-js",
   "dependencies": {
+    "del-key": "^1.0.3",
     "extend": "^3.0.0",
     "fast-safe-stringify": "^2.0.6",
     "ip": "^1.1.4",

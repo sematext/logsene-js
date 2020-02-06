@@ -413,6 +413,28 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
+  it('LOGSENE_REMOVE_FIELDS environment variable removes nested fields', function (done) {
+    this.timeout(20000)
+    try {
+      process.env.LOGSENE_REMOVE_FIELDS = 'a.b.c,x'
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      // check for all required fields!
+      logsene.once('logged', function (event) {
+        delete process.env.LOGSENE_REMOVE_FIELDS
+        if (event.msg.a.b.c || event.msg.x) {
+          done(new Error('nested field was not removed ' + JSON.stringify(event.msg)))
+        } else {
+          done()
+        }
+      })
+      logsene.once('error', function (event) {
+        done(event)
+      })
+      logsene.log('info', 'test', { a: { b: {c: 'toBeRemoved'}, x: 1 }})
+    } catch (err) {
+      done(err)
+    }
+  })
   it('transmit', function (done) {
     this.timeout(25000)
     var logCount = 1001
@@ -481,68 +503,6 @@ describe('Logsene log ', function () {
         logReceived()
       })
       for (var i = 0; i < totalLogs; i++) {
-        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
-      }
-    } catch (err) {
-      done(err)
-    }
-  })
-  it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
-    this.timeout(25000)
-    process.env.LOGSENE_REMOVE_FIELDS = 'testField,ip'
-    try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
-      var endTest = false
-      logsene.on('logged', function (event) {
-        if (endTest === true) {
-          return
-        }
-        endTest = true
-        if (event.msg.testField !== undefined) {
-          done(new Error('Fields [' + process.env.LOGSENE_REMOVE_FIELDS + '] not removed:' + JSON.stringify(event.msg)))
-          process.env.LOGSENE_REMOVE_FIELDS = null
-        } else {
-          done()
-          process.env.LOGSENE_REMOVE_FIELDS = null
-        }
-      })
-      logsene.once('error', function (event) {
-        console.log(event)
-        done(event)
-      })
-      logsene.on('error', console.log)
-      for (var i = 0; i <= 1; i++) {
-        logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
-      }
-    } catch (err) {
-      done(err)
-    }
-  })
-  it('LOGSENE_REMOVE_FIELDS environment variable removes fields', function (done) {
-    this.timeout(25000)
-    process.env.LOGSENE_REMOVE_FIELDS = 'testField,ip'
-    try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
-      var endTest = false
-      logsene.on('logged', function (event) {
-        if (endTest === true) {
-          return
-        }
-        endTest = true
-        if (event.msg.testField !== undefined) {
-          done(new Error('Fields [' + process.env.LOGSENE_REMOVE_FIELDS + '] not removed:' + JSON.stringify(event.msg)))
-          process.env.LOGSENE_REMOVE_FIELDS = null
-        } else {
-          done()
-          process.env.LOGSENE_REMOVE_FIELDS = null
-        }
-      })
-      logsene.once('error', function (event) {
-        console.log(event)
-        done(event)
-      })
-      logsene.on('error', console.log)
-      for (var i = 0; i <= 1; i++) {
         logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {

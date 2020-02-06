@@ -137,10 +137,12 @@ if (LOGSENE_BULK_SIZE < MIN_LOGSENE_BULK_SIZE) {
   LOGSENE_BULK_SIZE = MIN_LOGSENE_BULK_SIZE
 }
 
+const deleteKey = require('del-key')
+
 function removeFields (fieldList, doc) {
   if (fieldList && fieldList.length > 0 && fieldList[0] !== '') {
-    for (var i = 0; i < fieldList.length; i++) {
-      delete doc[fieldList[i]]
+    for (var i = fieldList.length; i >= 0; --i) {
+      deleteKey(doc, fieldList[i])
     }
   }
   return doc
