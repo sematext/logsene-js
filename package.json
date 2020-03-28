@@ -1,7 +1,7 @@
 {
   "name": "logsene-js",
   "version": "1.1.67",
-  "description": "JavaScript client for Logsene by Sematext",
+  "description": "JavaScript client for Sematext Logs",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -21,7 +21,7 @@
     "centralized logging",
     "log management",
     "log",
-    "Logsene",
+    "elastic stack",
     "elasticsearch",
     "ELK"
   ],
