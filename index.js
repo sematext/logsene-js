@@ -115,7 +115,7 @@ var MAX_MESSAGE_FIELD_SIZE = Number(process.env.LOGSENE_MAX_MESSAGE_FIELD_SIZE) 
 var MIN_LOGSENE_BULK_SIZE = 200
 var MAX_LOGSENE_BULK_SIZE = 10000
 var MAX_STORED_REQUESTS = Number(process.env.LOGSENE_MAX_STORED_REQUESTS) || 10000
-var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 2
+var MAX_CLIENT_SOCKETS = Number(process.env.MAX_CLIENT_SOCKETS) || 5
 
 // upper limit a user could set - 10 MB as configured in Sematext Cloud receivers
 var MAX_LOGSENE_BULK_SIZE_BYTES = 10 * 1000 * 1000
