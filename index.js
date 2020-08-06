@@ -459,7 +459,9 @@ Logsene.prototype.send = function (callback) {
         errorMessage += ', ' + logseneError
       }
       errObj = { source: 'logsene-js', err: (err || { message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url }) }
-      self.emit('error', errObj)
+      self.emit('warning', errObj)
+      console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+
       if (self.persistence) {
         if (req) {
           req.destroy()
@@ -494,7 +496,9 @@ Logsene.prototype.send = function (callback) {
 
       if (err) {
         errObj = { source: 'logsene-js', err: err }
-        self.emit('error', errObj)
+        self.emit('warning', errObj)
+        console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+
         if (self.persistence && req && req.destroy) {
           req.destroy()
         }
@@ -507,7 +511,8 @@ Logsene.prototype.send = function (callback) {
               source: 'logsene-js',
               err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
             }
-            self.emit('error', errObj)
+            self.emit('warning', errObj)
+            console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
           }
         })
 
@@ -545,7 +550,9 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   var req = self.request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
       var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name }) }
-      self.emit('error', errObj)
+      self.emit('warning', errObj)
+      console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+
       if (cb) {
         cb(errObj)
       }
