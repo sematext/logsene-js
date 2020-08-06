@@ -43,8 +43,8 @@
     "stream-buffers": "^3.0.1"
   },
   "devDependencies": {
-    "release-it": "^12.6.0",
     "mocha": "^6.1.4",
+    "release-it": "^13.6.6",
     "standard": "^13.0.2"
   },
   "release-it": {
