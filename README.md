@@ -37,6 +37,7 @@ In general Elasticsearch > 2.3 (including Sematext Logs) does not allow fields w
 - LOGS_BULK_SIZE - Maximum size of a bulk request. Default 1000.
 - LOGS_MAX_MESSAGE_FIELD_SIZE - maximum size of the 'message' field, default 240k
 - LOGS_RECEIVER_URL - URL for the Sematext Logs receiver. E.g. for Sematext Enterprise version. Defaults to Sematext Logs SaaS receiver https://logsene-receiver.sematext.com/_bulk
+- LOGSENE_TMP_DIR - Directory where to buffer logs if the Elasticsearch endpoint is unavailable. If this is not set, `logsene-js` will not buffer logs at all.
 - LOGS_BUFFER_ON_APP_LIMIT - default 'true'. HTTP bulk requests are retried until Sematext starts accepting logs again. Please increase your daily limit setting in Logs App settings if you see "403, App limit reached" errors. Setting the value to 'false' will disable disk buffering only for failed http requests '403, Forbidden / App limit reached'. We recommend to keep the default setting 'true' to avoid any loss of logs. 
 - LOGS_REMOVE_FIELDS - a comma separated list of fields, which should not be logged. For nested objects use a dot notation e.g. 'reques.body,request.size'
 
