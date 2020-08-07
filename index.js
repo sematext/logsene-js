@@ -195,6 +195,8 @@ function deepConvert (src, cb) {
  * token - the LOGSENE Token
  * type - type of log (string)
  * url - optional alternative URL for Logsene receiver (e.g. for on premises version)
+ * storageDirectory - directory where to buffer logs
+ * options - @object { useIndexInBulkUrl, httpOptions, silent }
  */
 function Logsene (token, type, url, storageDirectory, options) {
   if (!token) {
@@ -204,7 +206,8 @@ function Logsene (token, type, url, storageDirectory, options) {
     this.options = options
   } else {
     this.options = {
-      useIndexInBulkUrl: false
+      useIndexInBulkUrl: false,
+      silent: false
     }
   }
   if (url && /logsene/.test(url)) {
@@ -247,6 +250,17 @@ function Logsene (token, type, url, storageDirectory, options) {
   }
   var fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || process.env.REMOVE_FIELDS || ''
   this.removeFieldsList = fieldListStr.replace(/ /g, '').split(',')
+
+  // error handling
+  self.on('x-logsene-error', function (errObj) {
+    if (!self.options.silent) {
+      console.error(
+        new Date().toISOString() + 
+        ` logsene-js: cannot reach the receiver URL: ${errObj.err.url}, please check the error message ...`,
+        errObj
+      )
+    }
+  })
 }
 util.inherits(Logsene, events.EventEmitter)
 
@@ -459,8 +473,7 @@ Logsene.prototype.send = function (callback) {
         errorMessage += ', ' + logseneError
       }
       errObj = { source: 'logsene-js', err: (err || { message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url }) }
-      self.emit('warning', errObj)
-      console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+      self.emit('x-logsene-error', errObj)
 
       if (self.persistence) {
         if (req) {
@@ -496,8 +509,7 @@ Logsene.prototype.send = function (callback) {
 
       if (err) {
         errObj = { source: 'logsene-js', err: err }
-        self.emit('warning', errObj)
-        console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+        self.emit('x-logsene-error', errObj)
 
         if (self.persistence && req && req.destroy) {
           req.destroy()
@@ -511,8 +523,7 @@ Logsene.prototype.send = function (callback) {
               source: 'logsene-js',
               err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
             }
-            self.emit('warning', errObj)
-            console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+            self.emit('x-logsene-error', errObj)
           }
         })
 
@@ -550,8 +561,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   var req = self.request.post(options, function (err, res) {
     if (err || (res && res.statusCode > 399)) {
       var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name }) }
-      self.emit('warning', errObj)
-      console.error(new Date().toISOString() + ` logsene-js: cannot reach the receiver URL: ${err.url}, please check your network connection ...`, errObj)
+      self.emit('x-logsene-error', errObj)
 
       if (cb) {
         cb(errObj)

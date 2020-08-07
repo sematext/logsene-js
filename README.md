@@ -18,9 +18,11 @@ JavaScript client for [Sematext Logs](http://sematext.com/logsene).
 - __token__ - Logs App token. Sign up [here](https://apps.sematext.com/users-web/register.do).
 - __type__ - Optional. Default type of your logs - please note you can define [Elasticsearch mapping templates in Sematext Logs](http://blog.sematext.com/elasticsearch-mapping-types-for-json-logging/)
 - __url__ - Sematext Logs receiver URL (e.g. if you are shipping logs to [Sematext Enterprise](https://sematext.com/enterprise)), defaults to ```'https://logsene-receiver.sematext.com/_bulk'```
+- __storageDirectory__ - Directory where to buffer logs in the case of failure
 - __options__: 
   - __useIndexInBulkUrl__ -  If set to 'false' /_bulk will be used /indexName/_bulk otherwise.
   - __httpOptions__ - general HTTP/HTTPS options for the [request](https://nodejs.org/api/https.html#https_https_request_options_callback), e.g. SSL key,cert,passphrase,ca,rejectUNauthorized etc. 
+  - __silent__ - If set to `true`, logsene-js will not log debug and errors to stdout. Used for prod envs, but not mandatory. This is `false` by default.
 
 ## Special fields for indexing
 
