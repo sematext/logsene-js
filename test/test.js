@@ -88,14 +88,14 @@ http.createServer(function (req, res) {
   }
 }).listen(19200, '127.0.0.1')
 
-var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 35
+var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 40
 describe('Logsene Load Test ', function () {
-  it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
+  it.only('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
     try {
-      console.log('\t\tLOAD_TEST_MAX_MB: ' + MAX_MB)
+      console.log('\tLOAD_TEST_MAX_MB: ' + MAX_MB + ' MB')
       var logCount = Number(process.env.LOAD_TEST_SIZE) || 50000
-      console.log('\t\tLOAD_TEST_SIZE: ' + logCount)
+      console.log('\tLOAD_TEST_SIZE: ' + logCount + ' logs')
 
       var memory = process.memoryUsage().heapUsed
       var counter = 0
