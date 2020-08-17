@@ -598,7 +598,7 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-  it.only('transmit fail keeps flat memory footprint', function (done) {
+  it('transmit fail keeps flat memory footprint', function (done) {
     this.timeout(60000)
     try {
       var errorCounter = 0
