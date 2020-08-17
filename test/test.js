@@ -598,12 +598,12 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-  it('transmit fail keeps flat memory footprint', function (done) {
-    this.timeout(30000)
+  it.only('transmit fail keeps flat memory footprint', function (done) {
+    this.timeout(60000)
     try {
       var errorCounter = 0
       httpStatusToReturn = 501
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', { silent: true })
       var hu = process.memoryUsage().rss
       logsene.on('x-logsene-error', function (event) {
         // console.log(process.memoryUsage())
