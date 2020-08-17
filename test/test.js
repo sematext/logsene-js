@@ -472,7 +472,7 @@ describe('Logsene log ', function () {
     }
   })
   it('should fail to transmit some of the logs due to index conflict', function (done) {
-    this.timeout(25000)
+    this.timeout(60000)
     var totalLogs = 1001
     var totalConflicts = 100
     var logCounter = 0
