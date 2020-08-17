@@ -90,7 +90,7 @@ http.createServer(function (req, res) {
 
 var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 40
 describe('Logsene Load Test ', function () {
-  it.only('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
+  it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
     try {
       console.log('\tLOAD_TEST_MAX_MB: ' + MAX_MB + ' MB')
