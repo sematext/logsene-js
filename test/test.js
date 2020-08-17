@@ -605,19 +605,24 @@ describe('Logsene log ', function () {
       httpStatusToReturn = 501
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', { silent: true })
       var hu = process.memoryUsage().rss
-      logsene.on('x-logsene-error', function (event) {
-        // console.log(process.memoryUsage())
-        var diff = (process.memoryUsage().rss - hu) / 1024 / 1024
-        // console.log(hu/1024/1024)
-        errorCounter++
-        // console.log('\t' + errorCounter + ' ' + JSON.stringify(event.err))
-        if (errorCounter >= 100000 / 1000) {
-          errorCounter = 0
-          if (diff < 200) { done() } else {
-            console.log()
-            done(new Error('too much memory used:' + diff + ' MB' + JSON.stringify(process.memoryUsage())))
+      logsene.once('x-logsene-error', function (event) {
+        var initialDiff = (process.memoryUsage().rss - hu) / 1024 / 1024
+
+        logsene.on('x-logsene-error', function (event) {
+          var diff = (process.memoryUsage().rss - hu) / 1024 / 1024
+          errorCounter++
+  
+          // console.log('Memory used: ' + diff + ' MB')
+          // console.log('Initial memory used: ' + initialDiff + ' MB')
+          // console.log(JSON.stringify(process.memoryUsage()))
+  
+          if (errorCounter >= 100000 / 1000) {
+            errorCounter = 0
+            if (diff < (initialDiff + 100)) { done() } else {
+              done(new Error('Too much memory used: ' + diff + ' MB' + JSON.stringify(process.memoryUsage())))
+            }
           }
-        }
+        })
       })
       for (var i = 0; i < 100000; i++) {
         logsene.log('info', 'test message')
