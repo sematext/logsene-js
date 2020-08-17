@@ -297,14 +297,14 @@ describe('Logsene persistance ', function () {
     this.timeout(70000)
     try {
       process.env.LOGSENE_DISK_BUFFER_INTERVAL = 2000
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test')
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       var url = logsene.url
       logsene.diskBuffer(true, './mocha-test')
       logsene.setUrl('http://notreachable.test')
       logsene.db.once('removed', function (event) {
         done()
       })
-      logsene.on('error', function (err) {
+      logsene.on('x-logsene-error', function (err) {
         if (err) {
           logsene.setUrl(url)
         }
@@ -322,8 +322,8 @@ describe('Logsene persistance ', function () {
 
 describe('Logsene log ', function () {
   it('should not throw circular reference error', function (done) {
-    var logsene = new Logsene(token, 'test')
-    logsene.on('error', console.log)
+    var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+    logsene.on('x-logsene-error', console.log)
     function Foo () {
       this.abc = 'Hello'
       this.circular = this
@@ -341,9 +341,9 @@ describe('Logsene log ', function () {
     }
   })
   it('should limit message field size, and remove originalLine when too large', function (done) {
-    var logsene = new Logsene(token, 'test')
+    var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
     // logsene.MAX_MESSAGE_FIELD_SIZE=5
-    logsene.on('error', console.log)
+    logsene.on('x-logsene-error', console.log)
     var longMessage = Buffer.alloc(logsene.maxMessageFieldSize * 2)
     longMessage = longMessage.fill('1').toString()
     try {
@@ -367,7 +367,7 @@ describe('Logsene log ', function () {
   it('logs have default fields message, @timestamp, os.host, os.host.host_ip + custom fields', function (done) {
     this.timeout(20000)
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.testField ||
@@ -383,7 +383,7 @@ describe('Logsene log ', function () {
           }
         }
       })
-      logsene.once('error', function (event) {
+      logsene.once('x-logsene-error', function (event) {
         done(event)
       })
       logsene.log('info', 'test', { '_id': 'testID', testField: 'Test custom field ' })
@@ -394,7 +394,7 @@ describe('Logsene log ', function () {
   it('leading _ in field names are removed, dots are replaced with _', function (done) {
     this.timeout(20000)
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.test_test) {
@@ -405,7 +405,7 @@ describe('Logsene log ', function () {
           }
         }
       })
-      logsene.once('error', function (event) {
+      logsene.once('x-logsene-error', function (event) {
         done(event)
       })
       logsene.log('info', 'test', { '_test.test': 'test' })
@@ -417,7 +417,7 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       process.env.LOGSENE_REMOVE_FIELDS = 'a.b.c,x'
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         delete process.env.LOGSENE_REMOVE_FIELDS
@@ -427,7 +427,7 @@ describe('Logsene log ', function () {
           done()
         }
       })
-      logsene.once('error', function (event) {
+      logsene.once('x-logsene-error', function (event) {
         done(event)
       })
       logsene.log('info', 'test', { a: { b: {c: 'toBeRemoved'}, x: 1 }})
@@ -440,7 +440,7 @@ describe('Logsene log ', function () {
     var logCount = 1001
     var counter = 0
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message ||
@@ -459,11 +459,11 @@ describe('Logsene log ', function () {
           done(new Error(`Too many log events received. Expected ${logCount}, received ${counter}.`))
         }
       })
-      logsene.once('error', function (event) {
+      logsene.once('x-logsene-error', function (event) {
         console.log(event)
         done(event)
       })
-      logsene.on('error', console.log)
+      logsene.on('x-logsene-error', console.log)
       for (var i = 0; i < logCount; i++) {
         logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
@@ -479,7 +479,7 @@ describe('Logsene log ', function () {
     var conflictCounter = 0
     mappingConflicts = totalConflicts
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity ||
@@ -498,7 +498,7 @@ describe('Logsene log ', function () {
         logCounter += event.count
         logReceived()
       })
-      logsene.on('error', function (event) {
+      logsene.on('x-logsene-error', function (event) {
         conflictCounter++
         logReceived()
       })
@@ -513,13 +513,13 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       httpStatusToReturn = 501
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // logsene.once('log', function (event) {
       // this should not happen in this test case
       // done(event)
       // })
 
-      logsene.once('error', function (event) {
+      logsene.once('x-logsene-error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
         httpStatusToReturn = 200
@@ -540,8 +540,8 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       httpStatusToReturn = 403 // code to generate "403, Application limit reached"
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
-      logsene.once('error', function (event) {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      logsene.once('x-logsene-error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
         httpStatusToReturn = 200
@@ -562,8 +562,8 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       httpStatusToReturn = 400 // code to generate "400, Application not found"
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
-      logsene.once('error', function (event) {
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', { silent: true })
+      logsene.once('x-logsene-error', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
         httpStatusToReturn = 200
@@ -584,8 +584,8 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       httpStatusToReturn = 400 // code to generate "400, Application not found"
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './')
-      logsene.once('error', function () {})
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', { silent: true })
+      logsene.once('x-logsene-error', function () {})
       logsene.once('fileNotStored', function (event) {
         // this is the error event we expect
         // reset to 200 for next test ...
@@ -603,9 +603,9 @@ describe('Logsene log ', function () {
     try {
       var errorCounter = 0
       httpStatusToReturn = 501
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL)
+      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       var hu = process.memoryUsage().rss
-      logsene.on('error', function (event) {
+      logsene.on('x-logsene-error', function (event) {
         // console.log(process.memoryUsage())
         var diff = (process.memoryUsage().rss - hu) / 1024 / 1024
         // console.log(hu/1024/1024)
