@@ -360,9 +360,6 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     os: {
       host: this.hostname,
       hostip: ipAddress
-    },
-    geo: {
-      ip: ipAddress
     }
   }
   if (disableJsonEnrichment) {
