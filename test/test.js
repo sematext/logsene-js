@@ -364,7 +364,7 @@ describe('Logsene log ', function () {
       done(err)
     }
   })
-  it('logs have default fields message, @timestamp, os.host, os.host.host_ip + custom fields', function (done) {
+  it('logs have default fields message, @timestamp, os.host, os.host.hostip + custom fields', function (done) {
     this.timeout(20000)
     try {
       var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
@@ -375,7 +375,7 @@ describe('Logsene log ', function () {
             !event.msg['@timestamp'] ||
             !event.msg.severity ||
             !event.msg.os.host ||
-            !event.msg.os.host_ip) {
+            !event.msg.os.hostip) {
           done(new Error('missing fields in log: ' + JSON.stringify(event.msg, null, '\t')))
         } else {
           if (event.msg.message === 'test') {
@@ -447,7 +447,7 @@ describe('Logsene log ', function () {
             !event.msg['@timestamp'] ||
             !event.msg.severity ||
             !event.msg.os.host ||
-            !event.msg.os.host_ip) {
+            !event.msg.os.hostip) {
           done(new Error('missing fields in log:' + JSON.stringify(event.msg, null, '\t')))
         }
       })
@@ -483,7 +483,7 @@ describe('Logsene log ', function () {
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message || !event.msg['@timestamp'] || !event.msg.severity ||
-            !event.msg.os.host || !event.msg.os.host_ip) {
+            !event.msg.os.host || !event.msg.os.hostip) {
           done(new Error('missing fields in log:' + JSON.stringify(event.msg)))
         }
       })

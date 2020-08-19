@@ -359,7 +359,10 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     severity: level,
     os: {
       host: this.hostname,
-      host_ip: ipAddress
+      hostip: ipAddress
+    },
+    geo: {
+      ip: ipAddress
     }
   }
   if (disableJsonEnrichment) {
