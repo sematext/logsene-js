@@ -1,6 +1,6 @@
 {
   "name": "logsene-js",
-  "version": "1.1.72",
+  "version": "1.1.73",
   "description": "JavaScript client for Sematext Logs",
   "main": "index.js",
   "directories": {
