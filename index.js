@@ -340,12 +340,30 @@ Logsene.prototype.diskBuffer = function (enabled, dir) {
  */
 Logsene.prototype.log = function (level, message, fields, callback) {
   this.logCount = this.logCount + 1
-  var type = fields ? fields._type : this.type
+  let type = 'logs'
+  let logType = 'logs'
+
+  if (fields) {
+    logType = fields._type
+  }
+
   if (this.options.useIndexInBulkUrl) {
     // not a Sematext service -> use only one type per index
     // Elasticsearch > 6.x allows only one type per index
     type = this.type
   }
+
+  var msg = {
+    '@timestamp': new Date(),
+    severity: level,
+    message,
+    logType,
+    os: {
+      host: this.hostname,
+      hostip: ipAddress
+    }
+  }
+
   var elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
@@ -353,15 +371,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (fields && fields._id) {
     elasticsearchDocId = fields._id
   }
-  var msg = {
-    '@timestamp': new Date(),
-    message: message,
-    severity: level,
-    os: {
-      host: this.hostname,
-      hostip: ipAddress
-    }
-  }
+
   if (disableJsonEnrichment) {
     msg = {}
   }
