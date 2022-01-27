@@ -15,7 +15,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-'user strict'
+
+'use strict'
 var Requester = require('request')
 var fs = require('fs')
 var util = require('util')
