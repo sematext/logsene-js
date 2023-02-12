@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "mocha": "^10.1.0",
-    "release-it": "^14.7.0",
+    "release-it": "^15.6.0",
     "standard": "^13.0.2"
   },
   "release-it": {
