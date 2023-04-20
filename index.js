@@ -465,7 +465,6 @@ Logsene.prototype.send = function (callback) {
   if (options.body === false) {
     return
   }
-  var req = null
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
     var logseneError = null
@@ -490,9 +489,6 @@ Logsene.prototype.send = function (callback) {
       self.emit('x-logsene-error', errObj)
 
       if (self.persistence) {
-        if (req) {
-          req.destroy()
-        }
         var storeFileFlag = true
         // don't use disk buffer for invalid Logsene tokens
         if (res && res.body && appNotFoundRegEx.test(res.body)) {
@@ -531,9 +527,6 @@ Logsene.prototype.send = function (callback) {
 
           self.emit('log', { source: 'logsene-js', count: count, url: options.url })
           delete options.body
-          if (req && req.destroy) {
-            req.destroy()
-          }
           if (callback) {
             callback(errObj, res)
           }
@@ -541,11 +534,6 @@ Logsene.prototype.send = function (callback) {
         .catch(err => {
           errObj = { source: 'logsene-js', err: err }
           self.emit('x-logsene-error', errObj)
-
-         // if (self.persistence && req && req.destroy) {
-         // req.destroy()
-        //}
-
         })
     }
   }
@@ -587,9 +575,6 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('file shipped', { file: name, count: options.logCount })
       self.emit('rt', { count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null })
     }
-    //if (req && req.destroy) {
-    //  req.destroy()
-   // }
   }
   fetch(options.url, options)
     .then(response => callbackFunc(null, response))
