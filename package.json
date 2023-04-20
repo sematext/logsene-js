@@ -39,12 +39,12 @@
     "ip": "^1.1.4",
     "json-stringify-safe": "^5.0.1",
     "mkpath": "^1.0.0",
-    "request": "^2.88.0",
+    "node-fetch": "^2.6.9",
     "stream-buffers": "^3.0.1"
   },
   "devDependencies": {
     "mocha": "^10.1.0",
-    "release-it": "^14.7.0",
+    "release-it": "^15.10.1",
     "standard": "^13.0.2"
   },
   "release-it": {
