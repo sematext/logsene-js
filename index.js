@@ -17,7 +17,7 @@
  */
 
 'use strict'
-var Requester = require('request')
+const fetch = require('node-fetch')
 var fs = require('fs')
 var util = require('util')
 var os = require('os')
@@ -291,10 +291,12 @@ Logsene.prototype.setUrl = function (url) {
     Agent = require('http').Agent
   }
   this.httpAgent = new Agent(httpOptions)
-  this.request = Requester.defaults({
+  this.httpDefaults = {
     agent: this.httpAgent,
-    timeout: 60000
-  })
+    timeout: 60000,
+  }
+  //fetch.defaults.timeout = 60000
+  //fetch.defaults.agent = this.httpAgent
 }
 var DiskBuffer = require('./DiskBuffer.js')
 
@@ -467,23 +469,24 @@ Logsene.prototype.send = function (callback) {
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
     var logseneError = null
+    let responseJson = null
     if (res && res.headers && res.headers['x-logsene-error']) {
       logseneError = res.headers['x-logsene-error']
     }
     var errorMessage = null
     var errObj = null
-    if (err || (res && res.statusCode > 399) || logseneError) {
+    if (err || (res && res.status > 399) || logseneError) {
       if (err && (err.code || err.message)) {
         err.url = options.url
       }
-      if (res && res.statusCode) {
-        errorMessage = 'HTTP status code:' + res.statusCode
+      if (res && res.status) {
+        errorMessage = 'HTTP status code:' + res.status
       }
 
       if (logseneError) {
         errorMessage += ', ' + logseneError
       }
-      errObj = { source: 'logsene-js', err: (err || { message: errorMessage, httpStatus: res.statusCode, httpBody: res.body, url: options.url }) }
+      errObj = { source: 'logsene-js', err: (err || { message: errorMessage, httpStatus: res.status, httpBody: res.body, url: options.url }) }
       self.emit('x-logsene-error', errObj)
 
       if (self.persistence) {
@@ -495,7 +498,7 @@ Logsene.prototype.send = function (callback) {
         if (res && res.body && appNotFoundRegEx.test(res.body)) {
           storeFileFlag = false
         }
-        if (res && res.statusCode && res.statusCode === 400) {
+        if (res && res.status && res.status === 400) {
           storeFileFlag = false
         }
         if (logseneError && limitRegex.test(logseneError)) {
@@ -512,45 +515,45 @@ Logsene.prototype.send = function (callback) {
         }
       }
     } else {
-      try {
-        res.body = JSON.parse(res.body)
-      } catch (error) {
-        err = error
-      }
-
-      if (err) {
-        errObj = { source: 'logsene-js', err: err }
-        self.emit('x-logsene-error', errObj)
-
-        if (self.persistence && req && req.destroy) {
-          req.destroy()
-        }
-      } else {
-        res.body.items.forEach(function (item) {
-          var result = item.index || item.create || item.update || item.delete
-          if (result && result.status > 399) {
-            errorMessage = 'HTTP status code:' + result.status + ' Error: ' + JSON.stringify(result.error)
-            var errObj = {
-              source: 'logsene-js',
-              err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
+      return res.json()
+        .then(responseJson => {
+          responseJson.items.forEach(function (item) {
+            var result = item.index || item.create || item.update || item.delete
+            if (result && result.status > 399) {
+              errorMessage = 'HTTP status code:' + result.status + ' Error: ' + JSON.stringify(result.error)
+              var errObj = {
+                source: 'logsene-js',
+                err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
+              }
+              self.emit('x-logsene-error', errObj)
             }
-            self.emit('x-logsene-error', errObj)
+          })
+
+          self.emit('log', { source: 'logsene-js', count: count, url: options.url })
+          delete options.body
+          if (req && req.destroy) {
+            req.destroy()
+          }
+          if (callback) {
+            callback(errObj, res)
           }
         })
+        .catch(err => {
+          errObj = { source: 'logsene-js', err: err }
+          self.emit('x-logsene-error', errObj)
 
-        self.emit('log', { source: 'logsene-js', count: count, url: options.url })
-        delete options.body
-        if (req && req.destroy) {
-          req.destroy()
-        }
-        if (callback) {
-          callback(errObj, res)
-        }
-      }
+         // if (self.persistence && req && req.destroy) {
+         // req.destroy()
+        //}
+
+        })
     }
   }
   self.logCount = Math.max(self.logCount - count, 0)
-  req = self.request.post(options, httpResult)
+  options = {...options, ...this.httpDefaults}
+  fetch(this.url, options)
+    .then(response => httpResult(null, response))
+    .catch(err => httpResult(err, null))
 }
 
 Logsene.prototype.shipFile = function (name, data, cb) {
@@ -569,9 +572,9 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   }
   options.body = options.body.toString()
   options.url = self.url
-  var req = self.request.post(options, function (err, res) {
-    if (err || (res && res.statusCode > 399)) {
-      var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.statusCode, httpStatus: res.statusCode, httpBody: res.body, url: options.url, fileName: name }) }
+  const callbackFunc = function (err, res) {
+    if (err || (res && res.status > 399)) {
+      var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.status, httpStatus: res.status, httpBody: res.body, url: options.url, fileName: name }) }
       self.emit('x-logsene-error', errObj)
 
       if (cb) {
@@ -584,9 +587,12 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('file shipped', { file: name, count: options.logCount })
       self.emit('rt', { count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null })
     }
-    if (req && req.destroy) {
-      req.destroy()
-    }
-  })
+    //if (req && req.destroy) {
+    //  req.destroy()
+   // }
+  }
+  fetch(options.url, options)
+    .then(response => callbackFunc(null, response))
+    .catch(error => callbackFunc(error, null))
 }
 module.exports = Logsene

@@ -39,7 +39,7 @@
     "ip": "^1.1.4",
     "json-stringify-safe": "^5.0.1",
     "mkpath": "^1.0.0",
-    "request": "^2.88.0",
+    "node-fetch": "^2.6.9",
     "stream-buffers": "^3.0.1"
   },
   "devDependencies": {
