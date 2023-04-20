@@ -100,7 +100,7 @@ describe('Logsene Load Test ', function () {
       var memory = process.memoryUsage().heapUsed
       var counter = 0
 
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {
         useIndexInBulkUrl: false,
         httpOptions: {
           keepAlive: true,
@@ -196,8 +196,8 @@ describe('Accept dynamic index name function', function () {
   it('generates index name per document', function (done) {
     this.timeout(25000)
     try {
-      var token = 'YOUR_TEST_TOKEN'
-      var logsene = new Logsene(token, 'test', 'http://localhost:19200')
+      const token = 'YOUR_TEST_TOKEN'
+      const logsene = new Logsene(token, 'test', 'http://localhost:19200')
       var logged = false
       var log = false
       function checkDone () {
@@ -234,10 +234,10 @@ describe('Using _index from message + remove _index field from message', functio
   it('generates index name per document', function (done) {
     this.timeout(25000)
     try {
-      var token = 'YOUR_TEST_TOKEN'
-      var logsene = new Logsene(token, 'test', 'http://localhost:19200')
-      var logged = false
-      var log = false
+      const token = 'YOUR_TEST_TOKEN'
+      const logsene = new Logsene(token, 'test', 'http://localhost:19200')
+      let logged = false
+      let log = false
       function checkDone () {
         if (log && logged) {
           done()
@@ -297,8 +297,8 @@ describe('Logsene persistance ', function () {
     this.timeout(70000)
     try {
       process.env.LOGSENE_DISK_BUFFER_INTERVAL = 2000
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
-      var url = logsene.url
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      const url = logsene.url
       logsene.diskBuffer(true, './mocha-test')
       logsene.setUrl('http://notreachable.test')
       logsene.db.once('removed', function (event) {
@@ -313,6 +313,7 @@ describe('Logsene persistance ', function () {
         for (var i = 0; i <= 1001; i++) {
           logsene.log('info', 'test retransmit message ' + i, { _id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
         }
+        done()
       }, 1000)
     } catch (err) {
       done(err)
@@ -322,7 +323,7 @@ describe('Logsene persistance ', function () {
 
 describe('Logsene log ', function () {
   it('should not throw circular reference error', function (done) {
-    var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+    const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
     logsene.on('x-logsene-error', console.log)
     function Foo () {
       this.abc = 'Hello'
