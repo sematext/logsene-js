@@ -18,23 +18,23 @@
 
 'use strict'
 const fetch = require('node-fetch')
-var fs = require('fs')
-var util = require('util')
-var os = require('os')
-var events = require('events')
-var ipAddress = require('ip').address()
-var path = require('path')
-var stringifySafe = require('fast-safe-stringify')
-var streamBuffers = require('stream-buffers')
+const fs = require('fs')
+const util = require('util')
+const os = require('os')
+const events = require('events')
+const ipAddress = require('ip').address()
+const path = require('path')
+const stringifySafe = require('fast-safe-stringify')
+const streamBuffers = require('stream-buffers')
 
 // settings for node stream buffer
-var initialBufferSize = 1024 * 1024
-var incrementBuffer = 1024 * 1024
+const initialBufferSize = 1024 * 1024
+const incrementBuffer = 1024 * 1024
 // re-usable regular expressions
-var limitRegex = /limit/i
-var appNotFoundRegEx = /Application not found for token/i
-var disableJsonEnrichment = (process.env.ENABLE_JSON_ENRICHMENT === 'false')
-var replaceDotsInFieldNames = true
+const limitRegex = /limit/i
+const appNotFoundRegEx = /Application not found for token/i
+const disableJsonEnrichment = (process.env.ENABLE_JSON_ENRICHMENT === 'false')
+let replaceDotsInFieldNames = true
 if (process.env.REPLACE_DOTS_IN_FIELD_NAMES === 'false' || process.env.REPLACE_DOTS_IN_FIELD_NAMES === '0') {
   replaceDotsInFieldNames = false
 }
@@ -45,22 +45,22 @@ if (process.env.REPLACE_DOTS_IN_FIELD_NAMES === 'false' || process.env.REPLACE_D
 // setup receiver URLs
 function loadEnvFromFile (fileName) {
   try {
-    var receivers = fs.readFileSync(fileName).toString()
+    const receivers = fs.readFileSync(fileName).toString()
     if (receivers) {
-      var lines = receivers.split('\n')
+      const lines = receivers.split('\n')
+      lines.forEach(function (line) {
+        const kv = line.split('=')
+        if (kv.length === 2 && kv[1].length > 0) {
+          process.env[kv[0].trim()] = kv[1].trim()
+          if (/logsene-js/.test(process.env.DEBUG)) {
+            console.log(kv[0].trim() + ' = ' + kv[1].trim())
+          }
+        }
+      })
     }
     if (/logsene-js/.test(process.env.DEBUG)) {
       console.log(new Date(), 'loading Sematext receiver URLs from ' + fileName)
     }
-    lines.forEach(function (line) {
-      var kv = line.split('=')
-      if (kv.length === 2 && kv[1].length > 0) {
-        process.env[kv[0].trim()] = kv[1].trim()
-        if (/logsene-js/.test(process.env.DEBUG)) {
-          console.log(kv[0].trim() + ' = ' + kv[1].trim())
-        }
-      }
-    })
   } catch (error) {
     // ignore missing file or wrong format
     if (/logsene-js/.test(process.env.DEBUG)) {
@@ -68,7 +68,7 @@ function loadEnvFromFile (fileName) {
     }
   }
 }
-var envFileName = '/etc/sematext/receivers.config'
+const envFileName = '/etc/sematext/receivers.config'
 /**
   if (/win/.test(os.platform()) {
     envFileName = process.env.ProgramData + '\\Sematext\\receivers.config'
@@ -78,7 +78,7 @@ loadEnvFromFile(envFileName)
 
 // removing LOGSENE from ENV variable names
 // and be backward compatible in case users still use old ENV variable names
-var envVarMapping = [
+const envVarMapping = [
   ['LOGSENE_MAX_MESSAGE_FIELD_SIZE', 'LOGS_MAX_MESSAGE_FIELD_SIZE'],
   ['LOGSENE_MAX_STORED_REQUESTS', 'LOGS_MAX_STORED_REQUESTS'],
   ['LOGSENE_BULK_SIZE_BYTES', 'LOGS_BULK_SIZE_BYTES'],
@@ -142,7 +142,7 @@ const deleteKey = require('del-key')
 
 function removeFields (fieldList, doc) {
   if (fieldList && fieldList.length > 0 && fieldList[0] !== '') {
-    for (var i = fieldList.length; i >= 0; --i) {
+    for (let i = fieldList.length; i >= 0; --i) {
       deleteKey(doc, fieldList[i])
     }
   }
@@ -157,24 +157,24 @@ function removeFields (fieldList, doc) {
 // null if the pair should be absent from the resulting object.
 
 function deepConvert (src, cb) {
-  var dest
+  let dest
   if (Array.isArray(src)) {
     dest = []
   } else {
     dest = {}
   }
   if (dest) {
-    for (var key in src) {
+    for (let key in src) {
       if (src.hasOwnProperty(key)) {
-        var val = src[key]
-        var newKV = cb(key, val)
+        const val = src[key]
+        const newKV = cb(key, val)
         if (newKV === null) {
           // skip this field entirely
           continue
         }
 
-        var newKey = newKV[0]
-        var newVal = newKV[1]
+        const newKey = newKV[0]
+        const newVal = newKV[1]
 
         if (newVal !== undefined &&
           newVal !== null &&
@@ -232,10 +232,10 @@ function Logsene (token, type, url, storageDirectory, options) {
     this.sourceName = path.basename(process.mainModule.filename)
   }
   events.EventEmitter.call(this)
-  var self = this
+  let self = this
   self.lastSend = Date.now()
-  var logInterval = Number(process.env.LOGSENE_LOG_INTERVAL) || 20000
-  var tid = setInterval(function () {
+  const logInterval = Number(process.env.LOGSENE_LOG_INTERVAL) || 20000
+  const tid = setInterval(function () {
     if (self.logCount > 0 && (Date.now() - self.lastSend) > (logInterval - 1000)) {
       self.send()
     }
@@ -249,7 +249,7 @@ function Logsene (token, type, url, storageDirectory, options) {
   if (process.env.LOGSENE_TMP_DIR || storageDirectory) {
     this.diskBuffer(true, process.env.LOGSENE_TMP_DIR || storageDirectory)
   }
-  var fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || process.env.REMOVE_FIELDS || ''
+  const fieldListStr = process.env.LOGSENE_REMOVE_FIELDS || process.env.REMOVE_FIELDS || ''
   this.removeFieldsList = fieldListStr.replace(/ /g, '').split(',')
 
   // error handling
@@ -266,7 +266,7 @@ function Logsene (token, type, url, storageDirectory, options) {
 util.inherits(Logsene, events.EventEmitter)
 
 Logsene.prototype.setUrl = function (url) {
-  var tmpUrl = url
+  let tmpUrl = url
   if (url.indexOf('_bulk') === -1) {
     tmpUrl = url + '/_bulk'
   } else {
@@ -277,11 +277,11 @@ Logsene.prototype.setUrl = function (url) {
   } else {
     this.url = tmpUrl
   }
-  var Agent = null
-  var httpOptions = { maxSockets: MAX_CLIENT_SOCKETS, keepAlive: false, maxFreeSockets: MAX_CLIENT_SOCKETS }
+  let Agent = null
+  let httpOptions = { maxSockets: MAX_CLIENT_SOCKETS, keepAlive: false, maxFreeSockets: MAX_CLIENT_SOCKETS }
   if (this.options.httpOptions) {
-    var keys = Object.keys(this.options.httpOptions)
-    for (var i = 0; i < keys.length; i++) {
+    const keys = Object.keys(this.options.httpOptions)
+    for (let i = 0; i < keys.length; i++) {
       httpOptions[keys[i]] = this.options.httpOptions[keys[i]]
     }
   }
@@ -295,21 +295,19 @@ Logsene.prototype.setUrl = function (url) {
     agent: this.httpAgent,
     timeout: 60000,
   }
-  //fetch.defaults.timeout = 60000
-  //fetch.defaults.agent = this.httpAgent
 }
-var DiskBuffer = require('./DiskBuffer.js')
+const DiskBuffer = require('./DiskBuffer.js')
 
 Logsene.prototype.diskBuffer = function (enabled, dir) {
   if (enabled) {
-    var tmpDir = path.join((dir || require('os').tmpdir()), this.token)
+    const tmpDir = path.join((dir || require('os').tmpdir()), this.token)
     this.db = DiskBuffer.createDiskBuffer({
       tmpDir: tmpDir,
       maxStoredRequests: Number(MAX_STORED_REQUESTS),
       interval: process.env.LOGSENE_DISK_BUFFER_INTERVAL || 5000
     })
     this.db.syncFileListFromDir()
-    var self = this
+    let self = this
     if (!this.db.isCached) {
       // only the first instance registers for retransmit-req
       // to avoid double event handling from multiple instances
@@ -356,7 +354,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     type = this.type
   }
 
-  var msg = {
+  let msg = {
     '@timestamp': new Date(),
     severity: level,
     message,
@@ -367,7 +365,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     }
   }
 
-  var elasticsearchDocId = null
+  let elasticsearchDocId = null
   if (fields && fields._type) {
     delete fields._type
   }
@@ -378,7 +376,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
   if (disableJsonEnrichment) {
     msg = {}
   }
-  var esSanitizedFields = deepConvert(fields, function (key, val) {
+  let esSanitizedFields = deepConvert(fields, function (key, val) {
     if (typeof val === 'function') {
       return null
     } else {
@@ -395,7 +393,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
     msg['@timestamp'] = new Date(msg['@timestamp'])
   }
   msg = removeFields(this.removeFieldsList, msg)
-  var _index = this.token
+  let _index = this.token
   if (fields && typeof (fields._index) === 'function') {
     _index = fields._index(msg)
   } else {
@@ -407,7 +405,7 @@ Logsene.prototype.log = function (level, message, fields, callback) {
 
   if (msg.message && typeof msg.message === 'string' && Buffer.byteLength(msg.message, 'utf8') > this.maxMessageFieldSize) {
     // new nodejs api, let's use Buffer.alloc instead of Buffer(size)
-    var cutMsg = Buffer.alloc ? Buffer.alloc(this.maxMessageFieldSize) : new Buffer(this.maxMessageFieldSize)
+    let cutMsg = Buffer.alloc ? Buffer.alloc(this.maxMessageFieldSize) : new Buffer(this.maxMessageFieldSize)
     cutMsg.write(msg.message)
     msg.message = cutMsg.toString()
     if (msg.originalLine) {
@@ -440,16 +438,16 @@ Logsene.prototype.log = function (level, message, fields, callback) {
  * @callback {function} optional callback function
  */
 Logsene.prototype.send = function (callback) {
-  var self = this
-  var buffer = this.bulkReq
+  let self = this
+  const buffer = this.bulkReq
   this.bulkReq = new streamBuffers.WritableStreamBuffer({
     initialSize: initialBufferSize,
     incrementAmount: incrementBuffer
   })
   buffer.end()
   self.lastSend = Date.now()
-  var count = this.logCount
-  var options = {
+  let count = this.logCount
+  let options = {
     url: this.url,
     logCount: count,
     headers: {
@@ -467,13 +465,13 @@ Logsene.prototype.send = function (callback) {
   }
   function httpResult (err, res) {
     // if (res && res.body) console.log(res.statusCode, res.body)
-    var logseneError = null
+    let logseneError = null
     let responseJson = null
     if (res && res.headers && res.headers['x-logsene-error']) {
       logseneError = res.headers['x-logsene-error']
     }
-    var errorMessage = null
-    var errObj = null
+    let errorMessage = null
+    let errObj = null
     if (err || (res && res.status > 399) || logseneError) {
       if (err && (err.code || err.message)) {
         err.url = options.url
@@ -489,7 +487,7 @@ Logsene.prototype.send = function (callback) {
       self.emit('x-logsene-error', errObj)
 
       if (self.persistence) {
-        var storeFileFlag = true
+        let storeFileFlag = true
         // don't use disk buffer for invalid Logsene tokens
         if (res && res.body && appNotFoundRegEx.test(res.body)) {
           storeFileFlag = false
@@ -514,10 +512,10 @@ Logsene.prototype.send = function (callback) {
       return res.json()
         .then(responseJson => {
           responseJson.items.forEach(function (item) {
-            var result = item.index || item.create || item.update || item.delete
+            let result = item.index || item.create || item.update || item.delete
             if (result && result.status > 399) {
               errorMessage = 'HTTP status code:' + result.status + ' Error: ' + JSON.stringify(result.error)
-              var errObj = {
+              let errObj = {
                 source: 'logsene-js',
                 err: { message: errorMessage, httpStatus: result.status, httpBody: result, url: options.url }
               }
@@ -545,8 +543,8 @@ Logsene.prototype.send = function (callback) {
 }
 
 Logsene.prototype.shipFile = function (name, data, cb) {
-  var self = this
-  var options = null
+  let self = this
+  let options = null
   try {
     options = JSON.parse(data)
   } catch (err) {
@@ -562,7 +560,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
   options.url = self.url
   const callbackFunc = function (err, res) {
     if (err || (res && res.status > 399)) {
-      var errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.status, httpStatus: res.status, httpBody: res.body, url: options.url, fileName: name }) }
+      let errObj = { source: 'logsene re-transmit', err: (err || { message: 'Logsene re-transmit status code:' + res.status, httpStatus: res.status, httpBody: res.body, url: options.url, fileName: name }) }
       self.emit('x-logsene-error', errObj)
 
       if (cb) {

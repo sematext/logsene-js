@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 process.setMaxListeners(0)
 var Logsene = require('../index.js')
-var token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
+const token = process.env.LOGSENE_TOKEN || 'YOUR_TEST_TOKEN'
 process.env.LOGSENE_URL = 'http://127.0.0.1:19200/_bulk'
 if (!process.env.LOGSENE_URL) {
   process.env.LOGSENE_URL = 'http://apps1.test.sematext.com:8088/_bulk'
@@ -13,19 +13,20 @@ console.log('Token: ' + process.env.LOGSENE_TOKEN)
 var http = require('http')
 var httpStatusToReturn = 200
 var mappingConflicts = 0
+
 http.createServer(function (req, res) {
-  var operations = ['index', 'create', 'update', 'delete']
-  var body = JSON.stringify({ error: 'bad request', status: 400 })
-  var headers = { 'Content-Type': 'text/plain' }
+  let operations = ['index', 'create', 'update', 'delete']
+  let body = JSON.stringify({ error: 'bad request', status: 400 })
+  let headers = { 'Content-Type': 'text/plain' }
   if (httpStatusToReturn === 200) {
     var rawData = ''
 
     req.on('data', function (chunk) { rawData += chunk })
     req.on('end', function () {
-      var data = rawData.toString().split('\n')
+      let data = rawData.toString().split('\n')
       const items = []
-      for (var i = data.length - 1; i >= 0; i--) {
-        var logResult = {
+      for (let i = data.length - 1; i >= 0; i--) {
+        let logResult = {
           _index: 'test',
           _type: '_doc',
           _id: 0,
@@ -52,7 +53,7 @@ http.createServer(function (req, res) {
             logResult.result = 'created'
           }
 
-          var operation = operations[Math.floor(Math.random() * operations.length)]
+          let operation = operations[Math.floor(Math.random() * operations.length)]
           items.push({
             [operation]: logResult
           })
@@ -80,25 +81,21 @@ http.createServer(function (req, res) {
     }
 
     res.writeHead(httpStatusToReturn, headers)
-    // req.on('data', function (data) {
-    //   console.log(data.toString().substring(0,10))
-    // })
     res.end(body)
-    // res.destroy()
   }
 }).listen(19200, '127.0.0.1')
 
-var MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 40
+const MAX_MB = Number(process.env.LOAD_TEST_MAX_MB) || 40
 describe('Logsene Load Test ', function () {
   it('memory keeps below ' + MAX_MB + ' MB since start', function (done) {
     this.timeout(120000)
     try {
       console.log('\tLOAD_TEST_MAX_MB: ' + MAX_MB + ' MB')
-      var logCount = Number(process.env.LOAD_TEST_SIZE) || 50000
+      let logCount = Number(process.env.LOAD_TEST_SIZE) || 50000
       console.log('\tLOAD_TEST_SIZE: ' + logCount + ' logs')
 
-      var memory = process.memoryUsage().heapUsed
-      var counter = 0
+      let memory = process.memoryUsage().heapUsed
+      let counter = 0
 
       const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './', {
         useIndexInBulkUrl: false,
@@ -107,8 +104,8 @@ describe('Logsene Load Test ', function () {
           localAddress: '127.0.0.1'
         }
       })
-      var start = new Date().getTime()
-      var doneCalled = false
+      const start = new Date().getTime()
+      let doneCalled = false
       console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
       console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
 
@@ -117,10 +114,10 @@ describe('Logsene Load Test ', function () {
           return
         }
         counter = counter + event.count
-        var memory2 = 0
+        let memory2 = 0
         if (counter >= logCount) {
           memory2 = process.memoryUsage().heapUsed
-          var heapDiff = ((memory2 - memory) / 1024 / 1024)
+          const heapDiff = ((memory2 - memory) / 1024 / 1024)
           console.log('\tHeap diff: ' + heapDiff + ' MB')
           console.log('\tHeap used: ' + process.memoryUsage().heapUsed / 1024 / 1024 + ' MB')
           console.log('\tRSS: ' + process.memoryUsage().rss / 1024 / 1024 + ' MB')
@@ -138,7 +135,7 @@ describe('Logsene Load Test ', function () {
       logsene.once('error', function (event) {
         done(event)
       })
-      for (var i = 0; i < logCount; i++) {
+      for (let i = 0; i < logCount; i++) {
         logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
@@ -149,7 +146,7 @@ describe('Logsene Load Test ', function () {
 
 describe('Logsene constructor', function () {
   it('should fail without a token', function (done) {
-    var emptyTokens = [undefined, null, '']
+    let emptyTokens = [undefined, null, '']
     emptyTokens.forEach(function (token) {
       try {
         new Logsene(token)
@@ -162,9 +159,9 @@ describe('Logsene constructor', function () {
   })
   it('should have "/token/_bulk" in url', function (done) {
     try {
-      var token = 'YOUR_TEST_TOKEN'
-      var re = new RegExp('\/' + token + '\/' + '_bulk')
-      var l = new Logsene(token, 'test', 'https://logsene-receiver')
+      const token = 'YOUR_TEST_TOKEN'
+      const re = new RegExp('\/' + token + '\/' + '_bulk')
+      let l = new Logsene(token, 'test', 'https://logsene-receiver')
       if (l.url.indexOf(token) > -1 && re.test(l.url)) {
         done()
         console.log('\tURL: ' + l.url)
@@ -177,9 +174,9 @@ describe('Logsene constructor', function () {
   })
   it('should have "/_bulk" in url, when only host:port is specified', function (done) {
     try {
-      var token = 'YOUR_TEST_TOKEN'
-      var re = /_bulk/
-      var l = new Logsene(token, 'test', 'http://localhost:9200')
+      const token = 'YOUR_TEST_TOKEN'
+      const re = /_bulk/
+      let l = new Logsene(token, 'test', 'http://localhost:9200')
       if (re.test(l.url)) {
         done()
         console.log('\tURL: ' + l.url)
@@ -198,8 +195,8 @@ describe('Accept dynamic index name function', function () {
     try {
       const token = 'YOUR_TEST_TOKEN'
       const logsene = new Logsene(token, 'test', 'http://localhost:19200')
-      var logged = false
-      var log = false
+      let logged = false
+      let log = false
       function checkDone () {
         if (log && logged) {
           done()
@@ -271,7 +268,7 @@ describe('Logsene DiskBuffer ', function () {
     this.timeout(120000)
     process.env.DEBUG_LOGSENE_DISK_BUFFER = true
     var DiskBuffer = require('../DiskBuffer.js')
-    var db = DiskBuffer.createDiskBuffer({
+    let db = DiskBuffer.createDiskBuffer({
       tmpDir: './tmp',
       interval: 1000
     })
@@ -310,7 +307,7 @@ describe('Logsene persistance ', function () {
         }
       })
       setTimeout(function () {
-        for (var i = 0; i <= 1001; i++) {
+        for (let i = 0; i <= 1001; i++) {
           logsene.log('info', 'test retransmit message ' + i, { _id: 'hey', testField: 'Test custom field ' + i, counter: i, _type: 'test_type', 'dot.sep.field': 34 })
         }
         done()
@@ -329,7 +326,7 @@ describe('Logsene log ', function () {
       this.abc = 'Hello'
       this.circular = this
     }
-    var foo = new Foo()
+    let foo = new Foo()
     try {
       logsene.log('info', 'circular test', foo)
       if (logsene.bulkReq.getContentsAsString('utf-8').indexOf('[Circular') !== -1) {
@@ -342,10 +339,10 @@ describe('Logsene log ', function () {
     }
   })
   it('should limit message field size, and remove originalLine when too large', function (done) {
-    var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+    let logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
     // logsene.MAX_MESSAGE_FIELD_SIZE=5
     logsene.on('x-logsene-error', console.log)
-    var longMessage = Buffer.alloc(logsene.maxMessageFieldSize * 2)
+    let longMessage = Buffer.alloc(logsene.maxMessageFieldSize * 2)
     longMessage = longMessage.fill('1').toString()
     try {
       logsene.log('info', longMessage, { originalLine: longMessage }, function (err, msg) {
@@ -353,7 +350,7 @@ describe('Logsene log ', function () {
           console.log(err)
           return done(err)
         }
-        var messageSize = Buffer.byteLength(msg.message, 'utf8')
+        let messageSize = Buffer.byteLength(msg.message, 'utf8')
         if (messageSize == logsene.maxMessageFieldSize && !msg.originalLine && msg.logsene_client_warning) {
           done()
         } else {
@@ -368,7 +365,7 @@ describe('Logsene log ', function () {
   it('logs have default fields message, @timestamp, os.host, os.host.hostip + custom fields', function (done) {
     this.timeout(20000)
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.testField ||
@@ -395,7 +392,7 @@ describe('Logsene log ', function () {
   it('leading _ in field names are removed, dots are replaced with _', function (done) {
     this.timeout(20000)
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         if (!event.msg.test_test) {
@@ -418,7 +415,7 @@ describe('Logsene log ', function () {
     this.timeout(20000)
     try {
       process.env.LOGSENE_REMOVE_FIELDS = 'a.b.c,x'
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.once('logged', function (event) {
         delete process.env.LOGSENE_REMOVE_FIELDS
@@ -438,10 +435,10 @@ describe('Logsene log ', function () {
   })
   it('transmit', function (done) {
     this.timeout(25000)
-    var logCount = 1001
-    var counter = 0
+    let logCount = 1001
+    let counter = 0
     try {
-      var logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
+      const logsene = new Logsene(token, 'test', process.env.LOGSENE_URL, './mocha-test', { silent: true })
       // check for all required fields!
       logsene.on('logged', function (event) {
         if (!event.msg.message ||
@@ -465,7 +462,7 @@ describe('Logsene log ', function () {
         done(event)
       })
       logsene.on('x-logsene-error', console.log)
-      for (var i = 0; i < logCount; i++) {
+      for (let i = 0; i < logCount; i++) {
         logsene.log('info', 'test message ' + i, { testField: 'Test custom field ' + i, counter: i })
       }
     } catch (err) {
