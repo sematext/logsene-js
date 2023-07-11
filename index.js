@@ -17,7 +17,7 @@
  */
 
 'use strict'
-const fetch = require('node-fetch')
+const nodeFetch = require('node-fetch')
 const fs = require('fs')
 const util = require('util')
 const os = require('os')
@@ -537,7 +537,7 @@ Logsene.prototype.send = function (callback) {
   }
   self.logCount = Math.max(self.logCount - count, 0)
   options = {...options, ...this.httpDefaults}
-  fetch(this.url, options)
+  nodeFetch(this.url, options)
     .then(response => httpResult(null, response))
     .catch(err => httpResult(err, null))
 }
@@ -574,7 +574,7 @@ Logsene.prototype.shipFile = function (name, data, cb) {
       self.emit('rt', { count: options.logCount, source: 'logsene', file: name, url: String(options.url), request: null, response: null })
     }
   }
-  fetch(options.url, options)
+  nodeFetch(options.url, options)
     .then(response => callbackFunc(null, response))
     .catch(error => callbackFunc(error, null))
 }
